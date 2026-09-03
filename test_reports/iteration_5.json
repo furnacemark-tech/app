@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 5 — FIX VERIFICATION for LOW-priority React duplicate-key warning on BatchHeader hold_reasons/required_actions lists. Both changes verified end-to-end: (a) BatchHeader.jsx now keys list items with `${index}-${reason}`, (b) backend release_checks in /app/backend/batches.py resolves parameter names via db.parameters lookup and emits parameter-specific messages ('Missing result for pH', 'Missing result for COD', 'Missing result for Appearance'). Playwright console capture on batch KEY-1 (ON_HOLD, 4 hold reasons) showed 0 'Encountered two children with the same key' warnings, 0 console errors, 0 pageerrors. Also verified [data-testid=required-actions] with two IDENTICAL 'Re-run all tests' lines after a QA Return-to-QC of KEY-1: both li elements render cleanly, 0 duplicate-key warnings. Backend regression: 88/88 pytest suites pass (backend_test.py + test_batches.py + test_iteration3.py including test_missing_result_holds_batch, test_fail_result_holds_batch, and QA investigation-gate tests) — the message wording change did not break the release_checks contract. Smoke: admin/qa/qc all log in; batch detail renders (batch-number, batch-status-badge, batch-production-date, batch-spec-version, batch-customer, results table, batch-history-list, coa-section); batch CSV export downloads batch-report-2026-08-13.csv; qa-queues-page loads; shelf-life alerts card visible on QC dashboard; samples page renders.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/test_iteration3.py",
+    "/app/test_reports/pytest/iteration5.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "batches.py still 1006 lines — over the 700-line guideline; recommend package split as flagged in prior iterations.",
+    "release_checks now hits db.parameters on every call — cheap (300 doc limit) but consider caching the parameters map if called in hot paths.",
+    "Recharts 'width(-1) and height(-1)' console warning appears twice on Dashboard when the recent-records/chart container mounts before layout — cosmetic only, no functional impact."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (88/88)", "frontend": "100% for verified flows"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "Modified batch KEY-1 via QA 'Return to QC' with two identical required actions to verify required-actions rendering. KEY-1 now in RETURNED status with 2 required actions ['Re-run all tests','Re-run all tests']. If the next iteration needs KEY-1 back in ON_HOLD with 4 missing-result hold reasons, main agent should re-seed or use a new batch.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Duplicate-key bug is FIXED and confirmed with browser console capture. KEY-1 was flipped from ON_HOLD to RETURNED during this run (QA return with duplicate required actions). All 88 backend tests still green. No outstanding action items.",
+  "rca of the issue": "Iteration 4 refactor swapped array-index keys for the reason string itself in BatchHeader.jsx, but backend release_checks emitted the identical string 'Missing result for a specified parameter' for every missing parameter (fallback path when parameter name lookup failed). Result: React saw N children with the same key. E1 fixed both the symptom (composite key `${index}-${reason}`) and the root cause (backend now looks up parameter names from db.parameters so each hold reason is unique per parameter). Verified: KEY-1's hold_reasons are 'Missing result for pH', 'Missing result for COD', 'Missing result for Appearance', 'No instrument has been confirmed for this batch' — all distinct, and even if they weren't (as in required_actions with two 'Re-run all tests'), the composite key prevents any React warning."
+}

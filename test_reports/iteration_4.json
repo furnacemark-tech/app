@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 4 — code-review remediation regression. Backend: 88/88 pytest passing across backend_test.py + test_batches.py + test_iteration3.py (no regressions after audit() signature change, qa_decision/enter_results/create_coa/coa_pdf_bytes/batches_csv splits). Frontend: full auth persistence + binary downloads validated. AUTH REFACTOR: (a) login works for admin/qa/qc, (b) wrong password shows 'Invalid email or password' via [data-testid=login-error], (c) full page reload keeps user signed in (no bounce to /login), (d) direct deep-link navigation to /batches, /qa-queues and /audit all resolve to the target page and do NOT redirect to /login, (e) logout redirects to /login and afterwards /batches deep-link redirects back to /login. BINARY DOWNLOADS with in-memory token + httpOnly cookies: export-batches-btn downloads batch-report-2026-08-13.csv both immediately after fresh login AND after a hard page reload; download-coa-pdf-btn-COA-IT3-14CE8A16-ALL-R1 downloads COA-IT3-14CE8A16-ALL-R1.pdf both fresh and after reload. BATCHDETAIL SPLIT: batch-detail-page, batch-number, batch-status-badge, batch-production-date, batch-shelf-life, batch-expiry-date, batch-spec-version, batch-customer, batch-instrument, batch-results-body, batch-history-list, coa-section and qa-actions all present on a released batch. QA Queues page renders qa-queues-page + queue-awaiting-review + queue-on-hold + queue-to-send. Specifications page shows Save buttons for QA. Samples search input works. Dashboard renders KPIs + chart + recent records + SHELF-LIFE ALERTS card for QA and QC.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BatchHeader.jsx (hold_reasons / required_actions map)", "issue": "React console error 'Encountered two children with the same key ... Missing result for a specified parameter'. The refactor replaced array-index keys with the reason string itself, but hold_reasons can legitimately contain the same string multiple times (one per missing parameter) so the key collides. Same latent risk in required_actions.map. Fix: use `${idx}-${r}` or a hash+idx key.", "selector": "[data-testid=hold-reasons] li", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/test_iteration3.py",
+    "/app/test_reports/pytest/iteration4_all.xml"
+  ],
+  "action_items": [
+    "BatchHeader.jsx: change hold_reasons.map((r) => <li key={r}>) and required_actions.map((r) => <li key={r}>) to use a stable non-colliding key (e.g. key={`${i}-${r}`}); duplicates like 'Missing result for a specified parameter' currently emit a React duplicate-key warning."
+  ],
+  "critical_code_review_comments": [
+    "AuthContext.login only sets user + access_token on success; if the backend response schema ever changes (e.g. missing access_token), setAccessToken(undefined) will silently keep the previous in-memory token — consider defensive `setAccessToken(data.access_token ?? null)`.",
+    "In-memory token is scoped to a single tab. Open a second tab and the second tab starts with no Bearer token; it depends entirely on the httpOnly cookie surviving. Verified working (cookies present), but any future CORS/domain change that breaks the cookie will now silently break cross-tab auth without an obvious signal.",
+    "batches.py is still 942 lines — the split reduced complexity of individual functions but the module is well over the 700-line limit. Recommend the same batches/ package split flagged in iteration 3.",
+    "BatchHeader duplicate-key warning above is the only user-visible artefact of the array-index-key removal; otherwise the refactor is clean."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (88/88)", "frontend": "100% for regression flows exercised"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "None new in this iteration; pytest run created the usual IT3-* / IT3PW-* / IT3SUP-* + TEST_ batches from prior test files.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Auth is now httpOnly cookies + in-memory Bearer fallback. /api/auth/me is called on every AuthProvider mount, so reload works transparently. If future iterations touch AuthContext or the axios interceptor, retest: (1) fresh login → reload → still logged in, (2) deep-link paste to /batches or /qa-queues without login state → still works, (3) CSV export + COA PDF download both fresh-session and post-reload. React duplicate-key warning in BatchHeader is the only outstanding item and does not block any functionality."
+}

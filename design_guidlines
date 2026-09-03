@@ -1,0 +1,122 @@
+{
+  "project_metadata": {
+    "name": "Enterprise LIMS System",
+    "description": "A fully functioning Laboratory Information Management System allowing for multiple users (QC, QA, Admin), sample registration, specifications limits, test results (pass/fail), audit trailing, and CoA export.",
+    "context_type": "DASHBOARDS & ADMIN PANELS",
+    "emotional_archetype": "ARCHETYPE 4: SWISS & HIGH-CONTRAST (Authority, Clarity, Truth)"
+  },
+  "theme": {
+    "mode": "light",
+    "colors": {
+      "base": "Stark White (#FFFFFF) and 10% Grey (#F3F4F6) for backgrounds. Tinted grey only (slightly cool blue/grey).",
+      "primary": "International Klein Blue (#002FA7) or strong Navy for primary actions.",
+      "accents": {
+        "success": "Green (#22C55E) for Pass/Approval",
+        "danger": "Signal Red (#EF4444) for Fail/Rejection",
+        "warning": "Warning Yellow (#F59E0B) for Pending/Queue"
+      },
+      "constraints": [
+        "FORBIDDEN_COLOR: teal green or teal blue (#1B93A4).",
+        "Never use pure black or pure gray. Use Slate/Zinc with slight blue tint.",
+        "Color is Function Only. 95% of the UI should be monochrome. Color exists only to guide action or indicate status (Pass/Fail)."
+      ]
+    }
+  },
+  "typography": {
+    "strategy": "The 'Old Money Tech' variant adapted for clinical use. Strict readability.",
+    "fonts": {
+      "headings": "Work Sans (Clean, objective, distinct from default sans).",
+      "body": "IBM Plex Sans (Highly legible for data tables and scientific metrics).",
+      "monospace": "IBM Plex Mono (For audit trails, logs, sample IDs)."
+    },
+    "hierarchy": {
+      "h1": "text-3xl sm:text-4xl tracking-tight leading-none font-bold",
+      "h2": "text-xl sm:text-2xl tracking-tight font-semibold",
+      "h3": "text-lg font-medium",
+      "body": "text-sm",
+      "labels": "text-xs uppercase tracking-[0.1em] font-semibold text-slate-500"
+    },
+    "constraints": [
+      "FORBIDDEN_FONTS: Space Grotesk, Inter, Roboto, Open Sans, Lato for Headings.",
+      "Use tabular-nums for all test results and metrics in tables to align decimals."
+    ]
+  },
+  "spacing_and_layout": {
+    "philosophy": "High Density Grid (For Dashboards / Analytics). Data-dense but clean enterprise look. F-pattern hierarchy.",
+    "grid_system": {
+      "base": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+      "gap": "gap-4 or gap-6",
+      "widgets": {
+        "summary_kpi": "col-span-1",
+        "primary_data_table": "col-span-full lg:col-span-3",
+        "action_feed": "col-span-1 row-span-2"
+      }
+    },
+    "alignment": "Left-align paragraphs, labels, inputs, tabular data, and lists for readability.",
+    "padding": "Containers with borders must have internal padding (p-4 to p-6) to prevent collision."
+  },
+  "surface_strategies": {
+    "style": "Grid Borders (The 'Technical' Look) + Flat Solid",
+    "details": [
+      "CRITICAL: For Medical/Clinical apps, use Flat Solid surfaces. DO NOT use Glassmorphism (prevents visual refraction of data).",
+      "Use subtle roundness: max 8px (rounded-md) border-radius or sharp edges.",
+      "Card Default: Flat background, 1px subtle border (border-border), no shadow.",
+      "Card Hover: Slight lift (-translate-y-1), subtle shadow (shadow-md).",
+      "Headers/Overlays: NEVER use transparent backgrounds. Use Solid Background with a hard bottom border."
+    ]
+  },
+  "components": {
+    "forms_and_inputs": {
+      "library": "Shadcn UI",
+      "usage": "Use Shadcn Input, Select, Form, Checkbox, Calendar. Never build from scratch. Strip the default Vercel-look to match the clinical brand."
+    },
+    "tables_and_data": {
+      "library": "Shadcn UI Table",
+      "usage": "Data-dense. Implement sticky headers, tight padding (py-2 px-3), and clear Pass/Fail badges. Use pagination for large datasets."
+    },
+    "charts": {
+      "library": "Shadcn Chart Components (Recharts)",
+      "usage": "Limit to essential trends (e.g., QC passing rate, sample turnaround time). Avoid decorative 3D charts."
+    }
+  },
+  "icons": {
+    "library": "Phosphor Icons (@phosphor-icons/react)",
+    "usage": "Best for dense dashboards and developer/lab tools. Use Duotone or Regular weight.",
+    "installation_command": "yarn add @phosphor-icons/react"
+  },
+  "motion_and_interactions": {
+    "rules": [
+      "Micro-animations for feedback only. Keep it fast and objective.",
+      "ALWAYS explicitly set text color on hover (e.g., hover:bg-slate-900 hover:text-white).",
+      "Use specific transitions: transition-colors duration-200, transition-transform duration-200.",
+      "CRITICAL: Do not use 'transition: all' globally."
+    ]
+  },
+  "accessibility": {
+    "rules": [
+      "All interactive and key informational elements MUST include a data-testid attribute. (e.g., data-testid='login-submit-button', data-testid='qa-approve-btn').",
+      "Normal text: Min 4.5:1 contrast. Large text: Min 3:1.",
+      "Focus states must have HIGHER contrast than default state."
+    ]
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1781708166347-898b7f09cd1b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHNjaWVuY2UlMjBsYWJvcmF0b3J5JTIwYmFja2dyb3VuZCUyMGNsZWFufGVufDB8fHx8MTc4NjQ1MzUzOXww&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract blue background with scattered white cubes and clear tubes",
+        "category": "Auth screen side panel background"
+      }
+    ],
+    "usage": "Use only where functional. LIMS is data-heavy, prioritize content."
+  },
+  "universal_agent_guidelines": [
+    "You tend to converge toward generic outputs. Break the 'AI slop' aesthetic by making creative, distinctive layouts with clear hierarchy.",
+    "NEVER use AI assistant emoji characters.",
+    "Prioritize pre-existing components from src/components/ui.",
+    "Use sonner for toasts.",
+    "CRITICAL: You are modifying .js files, NOT .tsx files. Use standard JS/JSX syntax.",
+    "CRITICAL: DO NOT use complete transparent backgrounds for UI surfaces like dropdowns or sticky headers.",
+    "CRITICAL: Use data-testid on all interactive elements.",
+    "Do NOT center align the app container (.App { text-align: center; } is banned). Left-align for human reading flow."
+  ]
+}

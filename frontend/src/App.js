@@ -1,56 +1,78 @@
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
+import QAQueues from "@/pages/QAQueues";
+import Batches from "@/pages/Batches";
+import BatchDetail from "@/pages/BatchDetail";
+import Products from "@/pages/Products";
+import Customers from "@/pages/Customers";
+import Instruments from "@/pages/Instruments";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { Layout } from "@/components/Layout";
+import { ChangePasswordGate } from "@/components/auth/ChangePasswordGate";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import Samples from "@/pages/Samples";
+import SampleDetail from "@/pages/SampleDetail";
+import Specifications from "@/pages/Specifications";
+import QAReview from "@/pages/QAReview";
+import AuditTrail from "@/pages/AuditTrail";
+import OOSLog from "@/pages/OOSLog";
+import UsersPage from "@/pages/UsersPage";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const QA_ROLES = ["admin", "qa"];
+const ADMIN_ROLES = ["admin"];
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+function Protected({ children, roles }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-8 text-sm text-slate-500">Checking session…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(user.role))
+    return <div className="p-8 text-sm text-red-700" data-testid="access-denied">Access denied for your role.</div>;
+  if (user.must_change_password)
+    return (
+      <Layout>
+        <ChangePasswordGate />
+      </Layout>
+    );
   return (
-    <div>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
-
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <Layout>
+      <ChangePasswordGate />
+      {children}
+    </Layout>
   );
 }
 
-export default App;
+function LoginRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-8 text-sm text-slate-500">Checking session…</div>;
+  if (user) return <Navigate to="/" replace />;
+  return <Login />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" richColors />
+        <Routes>
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/" element={<Protected><Dashboard /></Protected>} />
+          <Route path="/samples" element={<Protected><Samples /></Protected>} />
+          <Route path="/qa-queues" element={<Protected roles={QA_ROLES}><QAQueues /></Protected>} />
+          <Route path="/batches" element={<Protected><Batches /></Protected>} />
+          <Route path="/batches/:id" element={<Protected><BatchDetail /></Protected>} />
+          <Route path="/products" element={<Protected><Products /></Protected>} />
+          <Route path="/customers" element={<Protected><Customers /></Protected>} />
+          <Route path="/instruments" element={<Protected><Instruments /></Protected>} />
+          <Route path="/samples/:id" element={<Protected><SampleDetail /></Protected>} />
+          <Route path="/specifications" element={<Protected><Specifications /></Protected>} />
+          <Route path="/qa-review" element={<Protected roles={QA_ROLES}><QAReview /></Protected>} />
+          <Route path="/oos" element={<Protected><OOSLog /></Protected>} />
+          <Route path="/audit" element={<Protected><AuditTrail /></Protected>} />
+          <Route path="/users" element={<Protected roles={["admin"]}><UsersPage /></Protected>} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

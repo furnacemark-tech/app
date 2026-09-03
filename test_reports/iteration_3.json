@@ -1,0 +1,33 @@
+{
+  "summary": "Iteration 3 — PDF C of A, QA Work Queues, Stability Alerts, Batch CSV Report. Backend: 88/88 pytest passing (18 new + 70 regression). New file /app/backend/tests/test_iteration3.py covers: (a) PDF endpoint returns application/pdf starting with %PDF for ACTIVE and SUPERSEDED revisions; SUPERSEDED PDF contains 'SUPERSEDED' text (verified via pypdf text extraction); no-shelf-life product PDF omits 'Shelf life (days)' and 'Expiry date' rows; COA_PDF_DOWNLOADED action logged in batch history; PDF accessible to QC, QA and Admin; 404 for unknown coa_id. (b) /api/qa/queues returns awaiting_review, on_hold, certificates_to_send, reissue_required; certificates_to_send contains just-released batch. (c) /api/alerts/expiring returns days_remaining + severity, sorted ascending, excludes shelf_life_required=false batches, respects `days` window. (d) /api/reports/batches.csv returns text/csv with all documented columns (Batch number, Product, Status, Production date, Expiry date, Spec version, Customer, Instrument, Results summary, Active C of A, C of A revisions, Deliveries, Cancel reason), includes released batch row, audits EXPORT_BATCH_REPORT, accessible to all roles. Frontend (Playwright, chromium): QA dashboard shows stability-alerts card, nav-qa-queues visible, /qa-queues renders qa-queues-page with queue-awaiting-review + queue-on-hold + queue-to-send + rows navigate to /batches/{id}; download-coa-pdf-btn-* triggers a PDF download (filename e.g. COA-B-TEST-1-HAL-R1.pdf); export-batches-btn on /batches downloads batch-report-YYYY-MM-DD.csv. QC role: stability-alerts card visible, nav-qa-queues hidden, direct nav to /qa-queues does NOT render qa-queues-page (Protected route blocks), export-batches-btn visible, download-coa-pdf-btn present on RELEASED batch detail. Regression backend suite still 70/70 (batches + samples).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration3.py",
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/iteration3_results.xml",
+    "/app/test_reports/pytest/all_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "batches.py /qa/queues uses CU() (any authenticated user) — backend allows QC to hit the endpoint even though the UI hides the nav and the Protected route blocks the page. For defence in depth, gate /api/qa/queues behind RR('qa') to match the UI's role-restriction contract.",
+    "batches.py Protected-route block for QC on /qa-queues leaves them on the URL /qa-queues with a blank body rather than a redirect to / or an explicit 403/'Access denied' UI. Consider redirecting or showing a message component (e.g. AccessDenied) to avoid a confusing blank page.",
+    "batches.py coa_pdf_bytes builds head rows unconditionally including 'Expiry date' only when shelf_life_required — correct — but 'Instrument' shows '' if instrument snapshot missing (release path always sets it, so OK today; consider a placeholder like '—').",
+    "batches.py /reports/batches.csv is unpaginated and reads up to 2000 batches; at scale this endpoint should stream row-by-row via csv.writer directly on a StreamingResponse generator to avoid loading the full doc set into memory.",
+    "batches.py /reports/batches.csv is accessible to all authenticated users (CU()). If batch export is considered sensitive, gate it behind RR('qa') or RR('admin').",
+    "batches.py /alerts/expiring accepts an unbounded `days` query — a very large value (e.g. 10^6) causes date arithmetic + a scan of every released batch. Cap the days parameter at a reasonable value (e.g. 3650).",
+    "batches.py file is now 942 lines (was 789). Well past the >700 threshold — recommend splitting into batches/{router.py, models.py, coa.py, release.py, pdf.py, reports.py, seed.py}.",
+    "test_batches.TestSpecAmendment adds a new Methanol spec_version on every run — Methanol version keeps drifting upward across CI runs. Consider gating the amend behind a test-only marker or resetting via a fixture."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration3.py"
+  ],
+  "success_rate": {"backend": "100% (88/88)", "frontend": "100% for the flows exercised"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "Iteration 3 tests create ~3 new Methanol batches (IT3-*, IT3SUP-*) and 1 Process Water batch (IT3PW-*) per run; each is released and generates 1–2 C of A revisions. Prefix IT3-/IT3PW-/IT3SUP- is safe to leave in the DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "pypdf is now installed in the runtime; test_iteration3.py uses pypdf.PdfReader to inspect PDF text. QA Queues to_send list now has ~25 rows in the shared DB from prior iterations — assertions only require ≥1 row for the just-released batch. When testing QC access to /qa-queues, the Protected component renders a blank body (no error string), so use 'qa-queues-page selector absent' as the failure signal rather than checking for 'denied' text."
+}

@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 7 — Full regression + focused verification of the new OOS QA disposition (RELEASE_AFTER_INVESTIGATION) workflow. Backend: 125/125 pytest GREEN in 32.8s across the four suites (backend_test.py + test_batches.py + test_iteration3.py + the new test_oos_disposition.py with 37 tests) — every one of the nine required behaviours from the review request is covered by dedicated tests (mineral scenario end-to-end, QC-cannot-release, QC/Admin cannot call disposition, unauthenticated 401, standard qa-decision refuses OOS batch, incomplete-documentation matrix, self-approval blocking, original data preservation across GET /api/products/{id}/versions, results locked after release, batch history + audit trail traceability of QA_RELEASE_AFTER_INVESTIGATION and retained BATCH_HELD_FOR_QA/OOS log, CSV has Release basis + Dispositioned OOS reference + Dispositioned OOS parameters, CoA snapshot shows FAIL 9.6 with contains_dispositioned_oos + release_basis and hides disposition_details unless COA_INCLUDE_INVESTIGATION_DETAILS=true, PDF starts %PDF, overdue-instrument and missing-result still block, RETURN_TO_QC + REJECT paths still work). Frontend: verified live on https://audit-data-lab.preview.emergentagent.com — QA login → ON_HOLD mineral batch MIN-F238AD69 (9.6 mg/g vs 9.8–14 mg/g spec, overall_result=FAIL, release_basis=STANDARD_RELEASE) renders every required testid (batch-overall-result, batch-release-basis, disposition-block, disposition-oos-list, disp-conclusion-input, disp-impact-input, disp-justification-input, disp-corrective-input, disp-evidence-input, disp-corrective-na-checkbox, disp-accept-oos-checkbox, qa-release-after-investigation-btn). Completing the QA form and clicking Release-after-investigation transitioned the batch to RELEASED with release_basis=RELEASE_AFTER_INVESTIGATION and overall_result stayed FAIL (result 9.6 preserved); disposition-notice appears on the header afterwards. QC role on the same ON_HOLD batch does NOT see disposition-block nor the release-after-investigation button, and POST to the disposition endpoint as QC returns 403. No regressions in the existing samples/batches/PDF/queues/alerts/CSV suites after the introduction of batch.overall_result and the three new CSV columns.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_oos_disposition.py",
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/test_iteration3.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/iteration7.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "batches.py is now 1269 lines — E1 should split into batches/routes.py + batches/checks.py + batches/coa.py + batches/disposition.py to comply with the 700-line file-size guideline (repeat of iter-6 comment; grew further with the disposition feature).",
+    "Class-scoped fixture defined as instance method in TestWorkflow (backend_test.py) and TestMineralAcceptanceScenario (test_oos_disposition.py) triggers a PytestRemovedIn10Warning — convert those fixtures to @classmethod-based to be future-proof; not blocking."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (125/125)", "frontend": "100% for the disposition surface exercised"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "Live UI test released one pre-existing seeded ON_HOLD mineral batch (MIN-F238AD69) via QA disposition — status now RELEASED with release_basis=RELEASE_AFTER_INVESTIGATION. 82 other ON_HOLD batches remain available for further UI testing.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "OOS disposition feature is fully implemented and verified end-to-end. All 125 backend tests pass. If any future iteration needs to test disposition UI again, plenty of ON_HOLD mineral batches like MIN-* remain in the seed. For the confidential CoA path, set COA_INCLUDE_INVESTIGATION_DETAILS=true in backend/.env and restart the backend — by default disposition_details is stripped from the CoA snapshot (verified by test_oos_disposition.py::TestCoaHonesty).",
+  "rca of the issue": "N/A — no issue found."
+}

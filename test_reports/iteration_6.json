@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 6 — Regression verification for the SECOND code-review remediation refactor (server.py save_results/build_sample_result/overall_result + split seed_*, batches.py _result_problems/_instrument_problems/_shelf_life_problems/_assert_decision_allowed/_assert_investigation_documented/merged_spec_data/coa_snapshot/supersede_existing/_assert_coa_sendable/_delivery_record, frontend BatchDetail composed of BatchHeader+BatchResultsTable+QcActionsPanel+QaActionsPanel+CoaSection+BatchHistory+dialogs via useBatch hook, Batches/Customers/Instruments/Login pages split, Layout+Chrome refactor). Backend: 88/88 pytest suites GREEN (tests/backend_test.py + tests/test_batches.py + tests/test_iteration3.py) in 20s — every sample endpoint (create/results/amend/submit/QA-approve/OOS), every batch endpoint (create/results/instrument confirm/submit/QC release/hold/QA return/approve/release/reject/investigation gate/production-date amendment/C of A generate/reissue/supersede/send/PDF/cancel rules/CSV export/QA queues/stability alerts/products/instruments/customers/contacts) exercised through the existing regression pack. Seeding still works after startup was split into seed_indexes/seed_users/seed_reference_data/seed_specifications — all three demo accounts log in, seeded products (Methanol multi, Formaldehyde FB2 exclusive to Northwind, Process Water no shelf life) and instruments (GC-99, HPLC-01, PH-204) are present. Frontend smoke via Playwright on the production URL: (a) QC/QA/Admin login all succeed via new LoginForm+DemoAccounts, (b) role-based sidebar correct — QC=[dashboard,samples,batches,products,instruments,customers,specifications,oos,audit] no qa-queues/users; QA adds qa-review+qa-queues; Admin adds users; (c) BatchDetail composes all expected sub-components (batch-number/batch-status-badge/batch-production-date/batch-spec-version/batch-customer/batch-history-list/coa-section) — verified on first of 114 batch rows via BatchTable, (d) QA queues page renders (qa-queues-page testid) and SESSION PERSISTS after full page reload — httpOnly cookie + refresh path intact, (e) QA customers is read-only (no add-customer-btn) while Admin sees add-customer-btn, customer-card-{name}, add-contact-btn-{name}, toggle-customer-{name}, plus add-instrument-btn and instrument-row-* on Instruments. Zero real console errors, zero pageerrors, zero duplicate-key warnings across the whole run (the 401s from the pre-login /api/auth/me probe are expected; the two 'No routes matched /dashboard' warnings occurred only because the test forced Admin to /dashboard whose default landing is /admin/dashboard — not a regression). Refactor is clean; nothing regressed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/test_iteration3.py",
+    "/app/test_reports/pytest/iteration6.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "batches.py still exceeds 700 lines (1006 in iter 5, similar after helper extraction) — consider splitting into batches/routes.py + batches/checks.py + batches/coa.py to comply with the size guideline.",
+    "Recharts 'width(-1) and height(-1)' cosmetic warning still appears on QC dashboard chart mount — pre-existing, not caused by this refactor."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (88/88)", "frontend": "100% for verified refactor surface"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "None. Existing seed + KEY-1 in RETURNED status from iter 5 preserved.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 6 was a pure refactor-regression verification. All 88 backend tests still pass; frontend refactored composition (BatchDetail sub-components, useBatch hook, split page components) is wired correctly and renders. Auth persistence via httpOnly cookies confirmed by full page reload keeping the QA queues session. No open regressions. If a future iteration wants to exercise the amendment/investigation UI end-to-end, use batch KEY-1 which is currently in RETURNED status with duplicate required actions, and the Methanol product has an active spec version > v1 from earlier iterations.",
+  "rca of the issue": "N/A — refactor introduced no regressions. E1's smoke fix of the briefly detached POST /api/samples/{id}/results decorator is confirmed working via TestWorkflow::test_qc_creates_sample and subsequent result-entry tests all passing."
+}

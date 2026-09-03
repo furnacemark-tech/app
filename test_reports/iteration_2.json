@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 2 — batch release / C of A workflow. Backend: full pytest coverage of the new /api/products, /api/instruments, /api/customers, /api/batches surface — 37/37 new tests + 33/33 iteration-1 regression tests all pass (70/70). Verified: batch create for multi + exclusive-customer + no-shelf-life products, auto-computed expiry (production_date + shelf_life_days), QC enters results + confirms instrument, QC release happy path -> ACTIVE C of A with delivery_status=READY_FOR_QA_TO_SEND, second release blocked, QA send to multiple recipients (2 delivery records), QA amend production date recalculates expiry + sets coa_reissue_required, QA authorise replacement C of A -> original becomes SUPERSEDED with link, sending superseded C of A rejected (400), release ON_HOLD when instrument overdue / result FAIL / result missing, QA return-to-QC with required actions, QC amend requires reason and preserves original/new/user/timestamp in amendments[], QA release blocked without root_cause/impact/corrective_action, QA release with full investigation docs generates C of A, QC/QA cannot create customers (403), QC cannot amend product/production_date/cancel (403), Admin cannot cancel (403), only QA cancels, cancel blocked once a C of A exists, cancel requires reason, QC cannot amend product spec (403), QA amends shelf-life -> new version + old batch keeps its original spec_version/shelf_life_days/expiry_date + new batch picks up new version, amend without reason rejected, batch history contains BATCH_CREATED / BATCH_RELEASED / COA_GENERATED. Frontend: verified all 3 role logins, QC creates batch through /batches -> auto-navigates to /batches/{id}, expiry surfaces, QC does NOT see add-customer-btn on /customers, Admin DOES see it. Sidebar shows Batches/Products/Instruments/Customers for all roles.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_batches.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/batches_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "batches.py version_for_date filters spec_versions by effective_from <= production_date. Since create_version always sets effective_from = date.today(), a NEW batch backdated with a production_date earlier than today will silently pick up the OLDER spec version even though the user just amended the spec. This is arguably correct per the 'existing batches keep their applied spec version' rule but is easy to trip on in tests/UX — consider surfacing the version being applied on the batch-create dialog so QC sees which spec_version their production_date will resolve to.",
+    "batches.py qa_decision self-approval guard: check compares user['email'] against batch.get('submitted_by') AND created_by. But only QC/admin can submit or create, and only QA can call qa-decision, so in practice the block can only trigger for admin users with dual role, or if an admin created+submitted then somehow acts as QA. Documented as satisfying the requirement but the practical attack surface is narrow — worth adding an explicit test with an admin-created + qa-role user to prove it fires.",
+    "batches.py QC amendment path treats a submitted-with-only-reason (no new value) the same as an update — enter_results always records a new revision with original_value = prev value even if new value equals prev. Consider skipping the amendment record when value is unchanged.",
+    "batches.py cancel_batch checks batch.get('coas') truthiness — if all coas were ever superseded and none active it still blocks, matching requirement 'cancellation is blocked once a C of A has been released'. Correct behaviour.",
+    "batches.py create_coa certificate_number uses account_code slice or first 3 chars of name — will collide across batches with same batch_number + same customer prefix. In practice batch_number should be unique, but there is no uniqueness constraint enforced on db.batches.batch_number (no unique index).",
+    "batches.py imports jwt and creates its own AsyncIOMotorClient / decodes JWT independently from server.py auth. Two independent auth code paths (server.get_current_user vs batches._current_user) drift risk — extract into a shared auth module.",
+    "seed_batch_module conditions on empty collections so it never adds new products if any exist; adding a new seed product to an already-populated DB requires manual work. Idempotent seed that upserts by code would be safer.",
+    "No batch_number uniqueness check in POST /batches — two batches with the same number can be created (they will share COA certificate_number prefix).",
+    "Frontend Products.jsx exposes the amend-spec form only inside the product history Dialog (opened via product-history-btn-{code}); the review request mentioned amend-shelf-life-input directly — selector exists but is dialog-gated, main agent should confirm this is the intended UX.",
+    "batches.py file is 789 lines — starting to approach the >700 threshold, split into batches/{router.py, models.py, coa.py, release.py, seed.py} for maintainability."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_batches.py"
+  ],
+  "success_rate": {"backend": "100% (70/70 across both suites)", "frontend": "100% for the flows exercised"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345",
+  "seed_data_creation": "Test run creates ~15 batches with prefix UITEST-/TEST- (HP/EX/PW/HOLD/FAIL/MISS/RG/PDQC/CNQC/CNAD/CAN/CANNR/PRE/POST), one released batch with 2 CoA revisions (1 SUPERSEDED, 1 ACTIVE) and 2 delivery records, one TEST_Cust_* customer with 1 contact, one Methanol spec_version bumped to shelf_life_days=1000. Data is uniquely prefixed and safe to re-run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_batches.py is idempotent and self-contained — each test uses uuid-suffixed batch numbers. If run repeatedly, TestSpecAmendment will add a new spec_version to 'Methanol Solution 99%' each time (safe, but the version number keeps growing). backend_test.py (sample workflow) remains the iteration-1 regression suite. Run both with: pytest /app/backend/tests/ -v. Note: version_for_date uses effective_from<=production_date and effective_from is date.today() at creation, so any 'new batch picks up new spec' assertion must use today's date as the production_date, not a past date."
+}
