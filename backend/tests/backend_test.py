@@ -135,11 +135,17 @@ class TestWorkflow:
         sid = pytest.sample_id
         params = context["params"]
         # pH 7 -> PASS (spec 5-9), COD 750 -> WARN (>=0.9*800=720), Ammonia 100 -> FAIL (>60.7), Appearance match -> PASS
+        # All seven Final Effluent required parameters must be entered so the sample is COMPLETE;
+        # Methanol/Formaldehyde/Suspended Solids are set to PASS values to keep the overall_result
+        # driven by the Ammonia FAIL as the pre-existing assertions expect.
         results = [
             {"parameter_id": params["pH"]["id"], "value_numeric": 7.0},
             {"parameter_id": params["COD"]["id"], "value_numeric": 750.0},
             {"parameter_id": params["Ammonia"]["id"], "value_numeric": 100.0},
             {"parameter_id": params["Appearance"]["id"], "value_text": "Clear Colourless"},
+            {"parameter_id": params["Methanol"]["id"], "value_numeric": 5.0},
+            {"parameter_id": params["Formaldehyde"]["id"], "value_numeric": 1.0},
+            {"parameter_id": params["Suspended Solids"]["id"], "value_numeric": 100.0},
         ]
         r = context["qc"].post(f"{API}/samples/{sid}/results", json={"results": results})
         assert r.status_code == 200, r.text

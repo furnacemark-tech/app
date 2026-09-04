@@ -537,13 +537,45 @@ def build_sample_result(item, parameter: dict, spec: Optional[dict], prev: Optio
     return r
 
 
-def overall_result(results: list) -> str:
+def overall_result(results: list, complete: bool) -> str:
+    """Deterministic overall status.
+
+    A sample is only PASS when every required spec parameter has a definitive
+    result AND none of them failed. A single missing/pending required result
+    keeps the sample PENDING even if every entered result passes. A single
+    FAIL always dominates.
+    """
     statuses = [r["status"] for r in results]
     if "FAIL" in statuses:
         return "FAIL"
+    if not complete:
+        return "PENDING"
     if "WARN" in statuses:
         return "WARN"
     return "PASS" if results else "PENDING"
+
+
+async def outstanding_required_parameters(sample: dict) -> list:
+    """Return names of active-spec parameters that still lack a definitive result.
+
+    Definitive = one of PASS/WARN/FAIL on the stored result. NO_SPEC or PENDING
+    values (or missing entries) count as outstanding.
+    """
+    specs = await db.specifications.find(
+        {"sample_point_id": sample["sample_point_id"], "active": True},
+        {"_id": 0, "parameter_id": 1},
+    ).to_list(500)
+    required_ids = [s["parameter_id"] for s in specs]
+    if not required_ids:
+        return []
+    definitive = {r["parameter_id"] for r in sample.get("results", [])
+                  if r.get("status") in ("PASS", "WARN", "FAIL")}
+    missing = [rid for rid in required_ids if rid not in definitive]
+    if not missing:
+        return []
+    params = {p["id"]: p.get("name", p["id"])
+              for p in await db.parameters.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)}
+    return [params.get(rid, rid) for rid in missing]
 
 
 @api.post("/samples/{sample_id}/results")
@@ -573,10 +605,13 @@ async def save_results(sample_id: str, body: ResultsIn,
         existing[item.parameter_id] = r
 
     results = list(existing.values())
-    expected_count = len([s for s in specs if s.get("active", True)])
-    complete = len(results) >= expected_count and expected_count > 0
+    active_specs = [s for s in specs if s.get("active", True)]
+    required_ids = {s["parameter_id"] for s in active_specs}
+    definitive_ids = {r["parameter_id"] for r in results
+                      if r.get("status") in ("PASS", "WARN", "FAIL")}
+    complete = bool(required_ids) and required_ids.issubset(definitive_ids)
     await db.samples.update_one({"id": sample_id}, {"$set": {
-        "results": results, "overall_result": overall_result(results),
+        "results": results, "overall_result": overall_result(results, complete),
         "status": "COMPLETE" if complete else "IN_PROGRESS",
         "updated_at": now_iso()}})
     return await db.samples.find_one({"id": sample_id}, {"_id": 0})
@@ -589,6 +624,12 @@ async def submit_sample(sample_id: str, body: DecisionIn, user: dict = Depends(r
         raise HTTPException(status_code=404, detail="Sample not found")
     if not sample.get("results"):
         raise HTTPException(status_code=400, detail="Enter at least one result before submitting for QA review")
+    outstanding = await outstanding_required_parameters(sample)
+    if outstanding:
+        raise HTTPException(status_code=422, detail={
+            "message": "Cannot submit: required results are missing",
+            "outstanding_parameters": outstanding,
+        })
     await db.samples.update_one({"id": sample_id}, {"$set": {
         "qa_status": "Pending Review", "submitted_by": user["email"],
         "submitted_at": now_iso(), "submit_comment": body.comment}})
@@ -611,6 +652,13 @@ async def qa_decision(sample_id: str, decision: str, body: DecisionIn,
         raise HTTPException(status_code=400, detail="Only samples pending review can be signed off")
     if decision == "reject" and not body.comment.strip():
         raise HTTPException(status_code=400, detail="A reason is required when rejecting a record")
+    if decision == "approve":
+        outstanding = await outstanding_required_parameters(sample)
+        if outstanding:
+            raise HTTPException(status_code=422, detail={
+                "message": "Cannot approve: required results are missing",
+                "outstanding_parameters": outstanding,
+            })
     new_status = mapping[decision]
     await db.samples.update_one({"id": sample_id}, {"$set": {
         "qa_status": new_status,
@@ -634,6 +682,12 @@ async def coa(sample_id: str, user: dict = Depends(get_current_user)):
     sample = await db.samples.find_one({"id": sample_id}, {"_id": 0})
     if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
+    outstanding = await outstanding_required_parameters(sample)
+    if outstanding:
+        raise HTTPException(status_code=422, detail={
+            "message": "Cannot issue an ordinary CoA: required results are missing",
+            "outstanding_parameters": outstanding,
+        })
     specs = await db.specifications.find({"sample_point_id": sample["sample_point_id"]}, {"_id": 0}).to_list(500)
     await audit(user, "EXPORT_COA", "sample", sample_id)
     return {"sample": sample, "specifications": specs, "generated_at": now_iso(),

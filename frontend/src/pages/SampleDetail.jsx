@@ -52,6 +52,15 @@ export default function SampleDetail() {
   const resultsById = Object.fromEntries((sample.results || []).map((r) => [r.parameter_id, r]));
   const locked = sample.qa_status === "Approved";
   const canEdit = can("admin", "qc") && !locked;
+  const activeSpecs = specs.filter((s) => s.active !== false);
+  const outstandingParams = activeSpecs
+    .filter((s) => {
+      const r = resultsById[s.parameter_id];
+      return !r || !["PASS", "WARN", "FAIL"].includes(r.status);
+    })
+    .map((s) => paramById[s.parameter_id]?.name)
+    .filter(Boolean);
+  const incomplete = activeSpecs.length > 0 && outstandingParams.length > 0;
 
   const saveResults = async () => {
     const payload = specs
@@ -249,9 +258,29 @@ export default function SampleDetail() {
             value={qaComment}
             onChange={(e) => setQaComment(e.target.value)}
           />
+          {incomplete && (
+            <div
+              className="text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded p-3"
+              data-testid="incomplete-warning"
+            >
+              <div className="font-semibold mb-1">Record is incomplete — ordinary release is blocked.</div>
+              <div>Outstanding required parameters:</div>
+              <ul className="list-disc pl-5 mt-1" data-testid="outstanding-parameters-list">
+                {outstandingParams.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {can("admin", "qc") && sample.qa_status !== "Approved" && (
-              <Button variant="outline" onClick={submitForReview} data-testid="submit-review-btn">
+              <Button
+                variant="outline"
+                onClick={submitForReview}
+                disabled={incomplete}
+                data-testid="submit-review-btn"
+                title={incomplete ? "All required results must be entered first" : ""}
+              >
                 <Send className="w-4 h-4 mr-1.5" /> Submit for QA review
               </Button>
             )}
@@ -259,8 +288,10 @@ export default function SampleDetail() {
               <>
                 <Button
                   onClick={() => decide("approve")}
+                  disabled={incomplete}
                   data-testid="qa-approve-btn"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  title={incomplete ? "Cannot approve: required results are missing" : ""}
                 >
                   <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve
                 </Button>
