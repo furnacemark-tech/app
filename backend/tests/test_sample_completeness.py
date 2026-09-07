@@ -150,6 +150,19 @@ class TestIncompleteBlockedOnCoA:
         assert r.status_code == 422, r.text
         assert f["p2"]["name"] in r.json()["detail"]["outstanding_parameters"]
 
+    def test_incomplete_coa_error_identifies_each_outstanding_parameter(
+        self,
+        sample_point_and_params,
+    ):
+        f = sample_point_and_params
+        qc = _session(QC)
+        s = _new_sample(qc, f["sp"]["id"])
+        r = qc.get(f"{BASE}/samples/{s['id']}/coa", timeout=30)
+        assert r.status_code == 422, r.text
+        detail = r.json()["detail"]
+        assert detail["message"] == "Cannot issue an ordinary CoA: required results are missing"
+        assert set(detail["outstanding_parameters"]) == {f["p1"]["name"], f["p2"]["name"]}
+
 
 class TestCompleteAllPass:
     def test_complete_all_pass_submit_and_approve(self, sample_point_and_params):

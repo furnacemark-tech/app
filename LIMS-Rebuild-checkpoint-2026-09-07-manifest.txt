@@ -1,0 +1,246 @@
+LIMS-Rebuild checkpoint manifest
+================================
+Checkpoint file : LIMS-Rebuild-checkpoint-2026-09-07.zip
+Size (bytes)    : 460589
+SHA-256         : cb47bf690446263b192fa08cfdcf93c268836ecdab1f49a2df9dd017d32dbc66
+File count      : 202
+Created (UTC)   : 2026-09-07T08:47:14Z
+
+Exclusions applied
+------------------
+.env files (backend/.env, frontend/.env, any *.env*)
+node_modules/, __pycache__/, *.pyc, venv/, .venv/
+.pytest_cache/, .cache/, build/, dist/, coverage/
+MongoDB data (/data/db/, dump.rdb), *.log, template .git/
+secrets (*token.json*, *credentials.json*, *.pem)
+
+Test results captured earlier this session (unchanged; no re-run performed)
+--------------------------------------------------------------------------
+pytest backend/tests/test_sample_completeness.py -v ......... 6 passed in 3.64s
+pytest backend/tests/test_auth_unified.py ................... 22 passed in 14.30s
+pytest (full backend suite) ................................. 186 passed / 0 failed in 66.74s
+
+Source files changed during the sample-completeness fix
+-------------------------------------------------------
+backend/server.py
+  - overall_result(results, complete): now demands completeness before PASS
+  - outstanding_required_parameters(sample) [new helper]
+  - save_results: complete flag derived from required specs ⊆ definitive results
+  - submit_sample: rejects incomplete with HTTP 422 + outstanding_parameters
+  - qa_decision (approve branch): independent completeness re-check, HTTP 422
+  - coa: refuses ordinary CoA on incomplete sample, HTTP 422
+backend/tests/backend_test.py
+  - test_qc_saves_results_pass_warn_fail: now enters all 7 Final Effluent required params
+backend/tests/test_sample_completeness.py [new]
+  - 6 focused regression tests for the REC-20260903-0003 defect
+frontend/src/pages/SampleDetail.jsx
+  - outstanding-parameters warning panel + disabled Submit/Approve while incomplete
+
+Confirmation of read-only checkpoint creation
+---------------------------------------------
+YES — /app source mtimes identical before and after checkpoint creation
+
+Included files (relative to zip root LIMS-Rebuild-checkpoint-2026-09-07/)
+------------------------------------------------------------------------
+LIMS-Rebuild-checkpoint-2026-09-07/
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/applied.hash
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/dispatch_webhook.sh
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/watch_crons.sh
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/webhook-crons
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/cron/webhook_crond.sh
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/emergent.yml
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/markers/
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/markers/.bootstrap-complete
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/markers/.restore-complete
+LIMS-Rebuild-checkpoint-2026-09-07/.emergent/system_deps.txt
+LIMS-Rebuild-checkpoint-2026-09-07/.gitconfig
+LIMS-Rebuild-checkpoint-2026-09-07/.github/
+LIMS-Rebuild-checkpoint-2026-09-07/.github/workflows/
+LIMS-Rebuild-checkpoint-2026-09-07/.github/workflows/auth-security-tests.yml
+LIMS-Rebuild-checkpoint-2026-09-07/.gitignore
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/.gitignore
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.5/
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.5/1013185694212426772
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.5/14984366893502950777
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.5/1698039101316153920
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.5/3060928685072573134
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.6/
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.6/1013185694212426772
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.6/14984366893502950777
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.6/1698039101316153920
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/0.16.6/3060928685072573134
+LIMS-Rebuild-checkpoint-2026-09-07/.ruff_cache/CACHEDIR.TAG
+LIMS-Rebuild-checkpoint-2026-09-07/README.md
+LIMS-Rebuild-checkpoint-2026-09-07/backend/
+LIMS-Rebuild-checkpoint-2026-09-07/backend/auth.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/batches.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/database.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/pytest.ini
+LIMS-Rebuild-checkpoint-2026-09-07/backend/requirements.txt
+LIMS-Rebuild-checkpoint-2026-09-07/backend/server.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/backend_test.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_auth_security.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_auth_unified.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_batches.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_iteration3.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_iteration8_verify.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_oos_disposition.py
+LIMS-Rebuild-checkpoint-2026-09-07/backend/tests/test_sample_completeness.py
+LIMS-Rebuild-checkpoint-2026-09-07/design_guidlines
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/.gitignore
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/README.md
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/components.json
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/craco.config.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/jsconfig.json
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/package.json
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/plugins/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/plugins/health-check/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/plugins/health-check/health-endpoints.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/plugins/health-check/webpack-health-plugin.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/postcss.config.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/public/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/public/index.html
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/App.css
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/App.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/Chrome.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/Layout.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/StabilityAlerts.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/StatusBadge.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/auth/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/auth/ChangePasswordGate.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/auth/LoginForm.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/BatchHeader.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/BatchHistory.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/BatchResultsTable.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/BatchTable.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/CoaDialogs.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/CoaSection.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/NewBatchDialog.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/QaActionsPanel.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/batch/QcActionsPanel.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/customers/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/customers/CustomerCard.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/customers/CustomerDialogs.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/instruments/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/instruments/NewInstrumentDialog.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/accordion.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/alert-dialog.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/alert.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/aspect-ratio.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/avatar.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/badge.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/breadcrumb.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/button.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/calendar.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/card.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/carousel.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/checkbox.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/collapsible.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/command.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/context-menu.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/dialog.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/drawer.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/dropdown-menu.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/form.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/hover-card.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/input-otp.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/input.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/label.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/menubar.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/navigation-menu.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/pagination.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/popover.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/progress.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/radio-group.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/resizable.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/scroll-area.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/select.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/separator.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/sheet.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/skeleton.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/slider.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/sonner.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/switch.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/table.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/tabs.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/textarea.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/toast.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/toaster.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/toggle-group.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/toggle.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/components/ui/tooltip.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/constants/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/constants/testIds/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/constants/testIds/auth.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/constants/testIds/home.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/constants/testIds/index.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/context/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/context/AuthContext.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/hooks/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/hooks/use-toast.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/hooks/useBatch.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/index.css
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/index.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/lib/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/lib/api.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/lib/utils.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/AuditTrail.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/BatchDetail.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Batches.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Customers.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Dashboard.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Instruments.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Login.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/OOSLog.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Products.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/QAQueues.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/QAReview.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/SampleDetail.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Samples.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/Specifications.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/src/pages/UsersPage.jsx
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/tailwind.config.js
+LIMS-Rebuild-checkpoint-2026-09-07/frontend/yarn.lock
+LIMS-Rebuild-checkpoint-2026-09-07/memory/
+LIMS-Rebuild-checkpoint-2026-09-07/memory/.gitkeep
+LIMS-Rebuild-checkpoint-2026-09-07/memory/PRD.md
+LIMS-Rebuild-checkpoint-2026-09-07/memory/test_credentials.md
+LIMS-Rebuild-checkpoint-2026-09-07/package-lock
+LIMS-Rebuild-checkpoint-2026-09-07/scripts/
+LIMS-Rebuild-checkpoint-2026-09-07/scripts/seed_test_accounts.py
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/status 
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/.gitkeep
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_1.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_2.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_3.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_4.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_5.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_6.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_7.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_8.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/iteration_9.json
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/.gitkeep
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/all_results.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/batches_results.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration3_results.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration4_all.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration5.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration6.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration7.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration8.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/iteration9.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_reports/pytest/pytest_results.xml
+LIMS-Rebuild-checkpoint-2026-09-07/test_result.md
+LIMS-Rebuild-checkpoint-2026-09-07/tests/
+LIMS-Rebuild-checkpoint-2026-09-07/tests/__init__.py

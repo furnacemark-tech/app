@@ -46,6 +46,12 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - Stability alerts on the dashboard and `/api/alerts/expiring`: released shelf-life batches with days remaining and WARNING/CRITICAL/EXPIRED severity
 - Batch report CSV export covering status, dates, shelf life, spec version, customer, instrument, results, release, holds, certificate revisions, deliveries and cancellations; audited as EXPORT_BATCH_REPORT
 
+### Iteration 10 (sample CoA eligibility UX — 2026-09-07)
+- Kept the authoritative backend CoA completeness gate unchanged; incomplete samples still return HTTP 422 with the outstanding required parameters.
+- Sample detail now disables ordinary CoA until all required results are present and QA has approved the record, with an explicit in-page reason naming outstanding parameters.
+- CoA request failures, including a server-side 422 received after a request begins, are caught and displayed as a controlled toast rather than an unhandled Axios error.
+- Added pure frontend CoA eligibility/error-format regression coverage and expanded the backend completeness regression to assert every outstanding parameter is returned.
+
 ## Verification
 - iteration_1.json: 33/33 backend, frontend 100%
 - iteration_2.json: 70/70 backend, frontend 100%
@@ -71,6 +77,8 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - CSV report gained Release basis, Dispositioned OOS reference and Dispositioned OOS parameters
 - New suite `/app/backend/tests/test_oos_disposition.py` (37 tests) including the mineral acceptance scenario (spec 9.8–14.0 mg/g, result 9.6 mg/g, nutritional specialist assessment)
 - iteration_7.json: 125/125 backend, frontend disposition surface 100%, no open issues
+- iteration_10.json: independent CoA verification 100% — incomplete CoA control disabled with named parameter, controlled intercepted 422 toast, and eligible QA-approved CoA request 200 with one print invocation; no runtime overlay or unhandled rejection
+- 2026-09-07 CoA regression checks: frontend helper tests 4/4, focused backend completeness tests 7/7, full backend suite 187/187 (two pre-existing pytest deprecation warnings)
 
 ## Code quality remediation round 2 (iteration 6)
 - Frontend decomposition: `useBatch` hook (loading, refresh, memoized lookups) plus `BatchHeader`, `BatchResultsTable`, `QcActionsPanel`, `QaActionsPanel`, `CoaSection`, `BatchHistory`, `SendCoaDialog`/`ReissueCoaDialog`, `NewBatchDialog`, `BatchTable`, `CustomerCard`, customer/instrument dialogs, `LoginForm`/`DemoAccounts`, `Sidebar`/`TopBar` — BatchDetail 634 → ~200 lines
@@ -79,5 +87,7 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - iteration_6.json: 88/88 backend, frontend regression 100%, zero console errors, no open issues
 
 ## Backlog
+- P0: clarify and implement the previously requested ChatGPT or Claude LIMS use case before adding any AI integration
 - P1: per-day batch/record counters, stability alert email digest, QA queue filters
+- P1: conditional, concessionary, or exceptional release workflow (explicitly deferred)
 - P2: derived/calculated parameters, e-signature meaning statements, change control register, trend pages per sample point, split server.py into routers, FastAPI lifespan migration

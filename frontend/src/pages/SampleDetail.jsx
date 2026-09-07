@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, Send, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
+import { coaEligibility, coaErrorMessage } from "@/lib/coaEligibility";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export default function SampleDetail() {
     .map((s) => paramById[s.parameter_id]?.name)
     .filter(Boolean);
   const incomplete = activeSpecs.length > 0 && outstandingParams.length > 0;
+  const coa = coaEligibility(sample, incomplete, outstandingParams);
 
   const saveResults = async () => {
     const payload = specs
@@ -110,8 +112,16 @@ export default function SampleDetail() {
   };
 
   const exportCoa = async () => {
-    await api.get(`/samples/${id}/coa`);
-    window.print();
+    if (!coa.eligible) {
+      toast.error(coa.message);
+      return;
+    }
+    try {
+      await api.get(`/samples/${id}/coa`);
+      window.print();
+    } catch (err) {
+      toast.error(coaErrorMessage(err.response?.data?.detail));
+    }
   };
 
   return (
@@ -135,7 +145,15 @@ export default function SampleDetail() {
             <StatusBadge value={sample.status} testId="sample-status-badge" />
             <StatusBadge value={sample.overall_result} testId="sample-result-badge" />
             <StatusBadge value={sample.qa_status} testId="sample-qa-status-badge" />
-            <Button variant="outline" size="sm" onClick={exportCoa} data-testid="export-coa-btn" className="no-print">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCoa}
+              disabled={!coa.eligible}
+              title={coa.message}
+              data-testid="export-coa-btn"
+              className="no-print"
+            >
               <FileText className="w-4 h-4 mr-1.5" /> CoA
             </Button>
           </div>
@@ -144,6 +162,14 @@ export default function SampleDetail() {
           <div className="mt-4 text-sm bg-slate-50 border border-slate-200 rounded p-3" data-testid="qa-comment-box">
             <span className="label-caps mr-2">QA note</span>
             {sample.qa_comment} — {sample.qa_reviewer}
+          </div>
+        )}
+        {!coa.eligible && (
+          <div
+            className="mt-4 text-sm bg-amber-50 border border-amber-200 text-amber-900 rounded p-3"
+            data-testid="coa-unavailable-notice"
+          >
+            {coa.message}
           </div>
         )}
       </div>

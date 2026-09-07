@@ -1,0 +1,24 @@
+{
+  "summary": "Verified CoA error-handling & eligibility UX fix. Backend focused regression /app/backend/tests/test_sample_completeness.py: 7/7 pass. Seeded via live API (admin) a dedicated sample point 'UI-SC-457084' with two mandatory numeric parameters (UIP1-457084, UIP2-457084). Created (a) an INCOMPLETE sample (only UIP1 entered) and (b) a COMPLETE sample (both entered), submitted by QC and approved by QA. Backend GET /api/samples/{incomplete}/coa returns HTTP 422 with detail={message:'Cannot issue an ordinary CoA: required results are missing', outstanding_parameters:['UIP2-457084']} as required. Frontend Playwright QC session at preview URL: (1) /samples/{incomplete}: data-testid=export-coa-btn is disabled; data-testid=coa-unavailable-notice visible with text 'CoA is unavailable until required results are entered: UIP2-457084.' — outstanding parameter is explicitly named. Attempting to click the disabled button timed out (as expected, no dispatched handler). No React runtime overlay iframe present; page.on('pageerror') captured 0 errors. (2) /samples/{complete}: CoA button enabled, no coa-unavailable-notice rendered. Click issues GET /api/samples/{id}/coa returning 200 and calls window.print exactly once — existing print/download behavior preserved. (3) Route-intercepted the same complete-sample CoA request with a 422 payload {message, outstanding_parameters:[MockParamA, MockParamB]}: clicking CoA produced a Sonner toast with text 'Cannot issue an ordinary CoA: required results are missing: MockParamA, MockParamB.' — controlled toast, no runtime overlay, window.print NOT called, no unhandled promise rejection. Console 'errors' are only browser network log lines: two 401s from AuthContext GET /auth/me pre-login (exempt endpoint) and one 422 from the intentional interception; none are React runtime errors. No source files modified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_sample_completeness.py",
+    "/app/test_reports/pytest/iteration10.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SampleDetail.jsx exportCoa: on 422 the axios error is caught and shown as a toast, but console still logs 'Failed to load resource 422' from the browser fetch layer — cosmetic only. Consider suppressing via api client interceptor if a clean console is desired.",
+    "coaEligibility.js is a small pure module (good). coaErrorMessage handles object/string/array/null detail shapes robustly.",
+    "Pre-existing (not in scope): server.py and batches.py still exceed the 700-line guideline (flagged in earlier iterations)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (7/7 test_sample_completeness.py)", "frontend": "100% for the four required verification points"},
+  "test_credentials": "admin@lims.local/Admin@123, qa@lims.local/Qa@12345, qc@lims.local/Qc@12345 all valid.",
+  "seed_data_creation": "Sample point UI-SC-457084 with two required numeric specs (UIP1-457084 <=10, UIP2-457084 <=20). Two samples: INCOMPLETE=986ad3eb-cf2b-4cd9-995c-4ae37e8b9099 (one result), COMPLETE (approved)=c68a1372-bcdf-4e7d-8e97-19baa0684f56. Prefix not TEST_ but IDs are scoped to a throwaway sample point and don't touch shared demo data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Preview URL https://lims-execute.preview.emergentagent.com is fronted by Cloudflare — pass a User-Agent header on raw requests. AuthContext GET /auth/me returns 401 pre-login (exempt path) and shows as a browser network 'Failed to load resource' console line, not a runtime error. When testing Sonner toasts, query [data-sonner-toast].",
+  "rca of the issue": "No new defect. The prior overlay/unhandled-rejection regression was resolved by SampleDetail.jsx catching axios errors in exportCoa and by disabling data-testid=export-coa-btn when coaEligibility marks the sample incomplete/unapproved. coaErrorMessage extracts the FastAPI detail object ({message, outstanding_parameters}) into a single readable toast string, so a backend 422 never bubbles as an unhandled promise rejection. Verified end-to-end with a real 422 (seeded incomplete sample) and a route-mocked 422 on an otherwise-eligible view."
+}
