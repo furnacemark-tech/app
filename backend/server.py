@@ -20,6 +20,12 @@ from pydantic import BaseModel, Field
 
 from database import client, db
 from auth import get_current_user, require_roles, session_is_active
+from instrument_traceability import (
+    assert_result_instruments,
+    sample_instrument_issues,
+    sample_with_traceability,
+    seed_traceability_master_data,
+)
 
 app = FastAPI(title="LIMS API")
 api = APIRouter(prefix="/api")
@@ -140,6 +146,8 @@ class ParameterIn(BaseModel):
     method: str = ""
     value_type: str = "numeric"  # numeric | text
     options: List[str] = []
+    instrument_required: bool = False
+    instrument_category: str = "MANUAL_NOT_CURRENTLY_CONTROLLED"
 
 
 class SpecIn(BaseModel):
@@ -163,7 +171,7 @@ class ResultIn(BaseModel):
     parameter_id: str
     value_numeric: Optional[float] = None
     value_text: Optional[str] = None
-    instrument_id: str = ""
+    instrument_id: Optional[str] = None
     comment: str = ""
 
 
@@ -523,7 +531,7 @@ async def get_sample(sample_id: str, user: dict = Depends(get_current_user)):
     s = await db.samples.find_one({"id": sample_id}, {"_id": 0})
     if not s:
         raise HTTPException(status_code=404, detail="Sample not found")
-    return s
+    return await sample_with_traceability(s)
 
 
 def build_sample_result(item, parameter: dict, spec: Optional[dict], prev: Optional[dict], user: dict) -> dict:
@@ -590,6 +598,8 @@ async def save_results(sample_id: str, body: ResultsIn,
     spec_map = {s["parameter_id"]: s for s in specs}
     params = {p["id"]: p for p in await db.parameters.find({}, {"_id": 0}).to_list(300)}
 
+    await assert_result_instruments(body.results, params)
+
     existing = {r["parameter_id"]: r for r in sample.get("results", [])}
     for item in body.results:
         parameter = params.get(item.parameter_id)
@@ -614,7 +624,8 @@ async def save_results(sample_id: str, body: ResultsIn,
         "results": results, "overall_result": overall_result(results, complete),
         "status": "COMPLETE" if complete else "IN_PROGRESS",
         "updated_at": now_iso()}})
-    return await db.samples.find_one({"id": sample_id}, {"_id": 0})
+    updated = await db.samples.find_one({"id": sample_id}, {"_id": 0})
+    return await sample_with_traceability(updated)
 
 
 @api.post("/samples/{sample_id}/submit")
@@ -629,6 +640,12 @@ async def submit_sample(sample_id: str, body: DecisionIn, user: dict = Depends(r
         raise HTTPException(status_code=422, detail={
             "message": "Cannot submit: required results are missing",
             "outstanding_parameters": outstanding,
+        })
+    instrument_issues = await sample_instrument_issues(sample)
+    if instrument_issues:
+        raise HTTPException(status_code=422, detail={
+            "message": "Cannot submit: instrument traceability must be corrected",
+            "instrument_issues": instrument_issues,
         })
     await db.samples.update_one({"id": sample_id}, {"$set": {
         "qa_status": "Pending Review", "submitted_by": user["email"],
@@ -659,6 +676,12 @@ async def qa_decision(sample_id: str, decision: str, body: DecisionIn,
                 "message": "Cannot approve: required results are missing",
                 "outstanding_parameters": outstanding,
             })
+        instrument_issues = await sample_instrument_issues(sample)
+        if instrument_issues:
+            raise HTTPException(status_code=422, detail={
+                "message": "Cannot approve: instrument traceability must be corrected",
+                "instrument_issues": instrument_issues,
+            })
     new_status = mapping[decision]
     await db.samples.update_one({"id": sample_id}, {"$set": {
         "qa_status": new_status,
@@ -687,6 +710,12 @@ async def coa(sample_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=422, detail={
             "message": "Cannot issue an ordinary CoA: required results are missing",
             "outstanding_parameters": outstanding,
+        })
+    instrument_issues = await sample_instrument_issues(sample)
+    if instrument_issues:
+        raise HTTPException(status_code=422, detail={
+            "message": "Cannot issue an ordinary CoA: instrument traceability must be corrected",
+            "instrument_issues": instrument_issues,
         })
     specs = await db.specifications.find({"sample_point_id": sample["sample_point_id"]}, {"_id": 0}).to_list(500)
     await audit(user, "EXPORT_COA", "sample", sample_id)
@@ -785,6 +814,7 @@ async def startup():
     await seed_reference_data()
     await seed_specifications()
     await batches.seed_batch_module()
+    await seed_traceability_master_data()
 
 
 

@@ -1,4 +1,4 @@
-export function coaEligibility(sample, incomplete, outstandingParams) {
+export function coaEligibility(sample, incomplete, outstandingParams, instrumentIssues = []) {
   if (incomplete) {
     const parameters = outstandingParams.join(", ");
     return {
@@ -6,6 +6,16 @@ export function coaEligibility(sample, incomplete, outstandingParams) {
       message: parameters
         ? `CoA is unavailable until required results are entered: ${parameters}.`
         : "CoA is unavailable until all required results are entered.",
+    };
+  }
+
+  if (instrumentIssues.length > 0) {
+    const summary = instrumentIssues
+      .map((issue) => `${issue.parameter}: ${issue.reason}`)
+      .join("; ");
+    return {
+      eligible: false,
+      message: `CoA is unavailable until instrument traceability is corrected. ${summary}`,
     };
   }
 
@@ -29,6 +39,12 @@ export function coaErrorMessage(detail) {
       : [];
     if (outstanding.length > 0) {
       return `${detail.message}: ${outstanding.join(", ")}.`;
+    }
+    if (Array.isArray(detail.instrument_issues) && detail.instrument_issues.length > 0) {
+      const issues = detail.instrument_issues
+        .map((issue) => `${issue.parameter}: ${issue.reason}`)
+        .join("; ");
+      return `${detail.message} ${issues}`;
     }
     return detail.message;
   }

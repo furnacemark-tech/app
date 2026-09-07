@@ -24,6 +24,19 @@ describe("sample CoA eligibility", () => {
     });
   });
 
+  it("blocks CoA when required instrument traceability is invalid", () => {
+    expect(
+      coaEligibility(approvedSample, false, [], [
+        { parameter: "Methanol", reason: "A registered GC instrument is required." },
+      ]),
+    ).toEqual({
+      eligible: false,
+      message:
+        "CoA is unavailable until instrument traceability is corrected. " +
+        "Methanol: A registered GC instrument is required.",
+    });
+  });
+
   it("formats an unexpected 422 response for a controlled toast", () => {
     expect(
       coaErrorMessage({

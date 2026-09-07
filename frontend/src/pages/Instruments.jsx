@@ -6,7 +6,14 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { NewInstrumentDialog } from "@/components/instruments/NewInstrumentDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const EMPTY_FORM = { name: "", instrument_code: "", calibration_due: "", service_due: "" };
+const EMPTY_FORM = {
+  name: "",
+  instrument_code: "",
+  calibration_due: "",
+  service_due: "",
+  category: "",
+  availability_status: "AVAILABLE",
+};
 
 export default function Instruments() {
   const { can } = useAuth();
@@ -52,6 +59,8 @@ export default function Instruments() {
             <TableRow>
               <TableHead>Instrument</TableHead>
               <TableHead>Code</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead>Calibration due</TableHead>
               <TableHead>Service due</TableHead>
               <TableHead>State</TableHead>
@@ -62,10 +71,12 @@ export default function Instruments() {
               <TableRow key={i.id} data-testid={`instrument-row-${i.instrument_code || i.name}`}>
                 <TableCell className="font-medium">{i.name}</TableCell>
                 <TableCell className="font-mono text-xs">{i.instrument_code}</TableCell>
+                <TableCell className="text-xs">{i.category || "Not configured"}</TableCell>
+                <TableCell className="text-xs">{i.availability_status}</TableCell>
                 <TableCell className="tabnum">{i.calibration_due}</TableCell>
                 <TableCell className="tabnum">{i.service_due}</TableCell>
                 <TableCell>
-                  <StatusBadge value={i.in_calibration && i.in_service ? "PASS" : "FAIL"} />
+                  <StatusBadge value={i.eligible ? "PASS" : "FAIL"} />
                 </TableCell>
               </TableRow>
             ))}

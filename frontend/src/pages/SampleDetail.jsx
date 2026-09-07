@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Send, CheckCircle2, XCircle, FileText } from "lucide-r
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { coaEligibility, coaErrorMessage } from "@/lib/coaEligibility";
+import { eligibleInstruments, traceabilityIssueSummary } from "@/lib/instrumentTraceability";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default function SampleDetail() {
   const [sample, setSample] = useState(null);
   const [specs, setSpecs] = useState([]);
   const [params, setParams] = useState([]);
+  const [instruments, setInstruments] = useState([]);
   const [entries, setEntries] = useState({});
   const [audit, setAudit] = useState([]);
   const [qaComment, setQaComment] = useState("");
@@ -24,14 +26,16 @@ export default function SampleDetail() {
   const load = useCallback(async () => {
     const { data } = await api.get(`/samples/${id}`);
     setSample(data);
-    const [sp, pr, au] = await Promise.all([
+    const [sp, pr, au, ins] = await Promise.all([
       api.get("/specifications", { params: { sample_point_id: data.sample_point_id } }),
       api.get("/parameters"),
       api.get("/audit-trail", { params: { entity_id: id } }),
+      api.get("/instruments"),
     ]);
     setSpecs(sp.data);
     setParams(pr.data);
     setAudit(au.data);
+    setInstruments(ins.data);
     const map = {};
     (data.results || []).forEach((r) => {
       map[r.parameter_id] = {
@@ -62,7 +66,16 @@ export default function SampleDetail() {
     .map((s) => paramById[s.parameter_id]?.name)
     .filter(Boolean);
   const incomplete = activeSpecs.length > 0 && outstandingParams.length > 0;
-  const coa = coaEligibility(sample, incomplete, outstandingParams);
+  const instrumentIssues = sample.instrument_issues || [];
+  const traceabilityBlocked = instrumentIssues.length > 0;
+  const traceabilitySummary = traceabilityIssueSummary(instrumentIssues);
+  const workflowBlocked = incomplete || traceabilityBlocked;
+  const coa = coaEligibility(
+    sample,
+    incomplete,
+    outstandingParams,
+    instrumentIssues,
+  );
 
   const saveResults = async () => {
     const payload = specs
@@ -74,7 +87,7 @@ export default function SampleDetail() {
           parameter_id: s.parameter_id,
           value_numeric: p.value_type === "numeric" ? parseFloat(e.value) : null,
           value_text: p.value_type === "numeric" ? null : e.value,
-          instrument_id: e.instrument_id || "",
+          instrument_id: p.instrument_required ? e.instrument_id || null : null,
           comment: e.comment || "",
         };
       })
@@ -172,6 +185,17 @@ export default function SampleDetail() {
             {coa.message}
           </div>
         )}
+        {traceabilityBlocked && (
+          <div
+            className="mt-4 text-sm bg-red-50 border border-red-200 text-red-900 rounded p-3"
+            data-testid="instrument-traceability-warning"
+          >
+            <div className="font-semibold">Instrument traceability requires review.</div>
+            <div className="mt-1" data-testid="instrument-traceability-summary">
+              {traceabilitySummary}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-md overflow-x-auto">
@@ -194,6 +218,8 @@ export default function SampleDetail() {
               if (!p) return null;
               const r = resultsById[s.parameter_id];
               const e = entries[s.parameter_id] || { value: "", instrument_id: "" };
+              const options = eligibleInstruments(p, instruments);
+              const instrumentKey = p.name.replace(/\s+/g, "-").toLowerCase();
               const spec =
                 p.value_type === "numeric"
                   ? `${s.lower_limit ?? "–"} to ${s.upper_limit ?? "–"} ${p.units}`
@@ -238,18 +264,52 @@ export default function SampleDetail() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {canEdit ? (
-                      <Input
-                        className="h-8 w-28"
-                        placeholder="ID"
-                        data-testid={`instrument-input-${p.name.replace(/\s+/g, "-").toLowerCase()}`}
+                    {canEdit && p.instrument_required ? (
+                      <select
+                        className="h-8 min-w-40 border border-slate-300 rounded px-2 text-sm bg-white"
+                        aria-label={`Instrument for ${p.name}`}
+                        data-testid={`instrument-select-${instrumentKey}`}
                         value={e.instrument_id}
                         onChange={(ev) =>
-                          setEntries({ ...entries, [s.parameter_id]: { ...e, instrument_id: ev.target.value } })
+                          setEntries({
+                            ...entries,
+                            [s.parameter_id]: { ...e, instrument_id: ev.target.value },
+                          })
                         }
-                      />
+                      >
+                        <option value="">Select eligible {p.instrument_category}…</option>
+                        {options.map((instrument) => (
+                          <option
+                            key={instrument.id}
+                            value={instrument.instrument_code || instrument.id}
+                          >
+                            {instrument.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : !p.instrument_required ? (
+                      <span
+                        className="text-xs text-slate-500"
+                        data-testid={`instrument-not-required-${instrumentKey}`}
+                      >
+                        Not required
+                      </span>
                     ) : (
-                      <span className="font-mono text-xs">{r?.instrument_id || "–"}</span>
+                      <div>
+                        <span className="font-mono text-xs">
+                          {r?.instrument_traceability?.registered_instrument_name ||
+                            r?.instrument_id ||
+                            "–"}
+                        </span>
+                        {r?.instrument_traceability?.state === "INVALID" && (
+                          <div
+                            className="mt-1 text-xs text-red-700"
+                            data-testid={`instrument-traceability-issue-${instrumentKey}`}
+                          >
+                            {r.instrument_traceability.reason}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>{r ? <StatusBadge value={r.status} testId={`result-status-${p.name.replace(/\s+/g, "-").toLowerCase()}`} /> : <StatusBadge value="PENDING" />}</TableCell>
@@ -303,9 +363,15 @@ export default function SampleDetail() {
               <Button
                 variant="outline"
                 onClick={submitForReview}
-                disabled={incomplete}
+                disabled={workflowBlocked}
                 data-testid="submit-review-btn"
-                title={incomplete ? "All required results must be entered first" : ""}
+                title={
+                  incomplete
+                    ? "All required results must be entered first"
+                    : traceabilityBlocked
+                      ? "Correct instrument traceability before submitting"
+                      : ""
+                }
               >
                 <Send className="w-4 h-4 mr-1.5" /> Submit for QA review
               </Button>
@@ -314,10 +380,16 @@ export default function SampleDetail() {
               <>
                 <Button
                   onClick={() => decide("approve")}
-                  disabled={incomplete}
+                  disabled={workflowBlocked}
                   data-testid="qa-approve-btn"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  title={incomplete ? "Cannot approve: required results are missing" : ""}
+                  title={
+                    incomplete
+                      ? "Cannot approve: required results are missing"
+                      : traceabilityBlocked
+                        ? "Cannot approve: instrument traceability requires correction"
+                        : ""
+                  }
                 >
                   <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve
                 </Button>

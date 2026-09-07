@@ -52,6 +52,13 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - CoA request failures, including a server-side 422 received after a request begins, are caught and displayed as a controlled toast rather than an unhandled Axios error.
 - Added pure frontend CoA eligibility/error-format regression coverage and expanded the backend completeness regression to assert every outstanding parameter is returned.
 
+### Iteration 11 (controlled sample instrument traceability — 2026-09-07)
+- Added controlled parameter master-data fields: `instrument_required` and `instrument_category`; the approved mapping is keyed by method code, not parameter display-name route logic.
+- Added instrument master-data fields: `category` and `availability_status`; frontend selection permits only active, category-matching, available instruments that are within calibration and service dates.
+- Sample result save now returns a structured HTTP 422 with `instrument_issues` when equipment is required but absent, unknown, incompatible, inactive, overdue, failed, or unavailable; manual methods persist no fabricated instrument reference.
+- Existing historical references are preserved and assessed on read: a uniquely matching `instrument_code` resolves without rewriting; unresolved, ambiguous, incompatible, inactive, or unavailable references are visibly flagged and block ordinary submission, QA approval, and CoA generation until an audited result amendment corrects them.
+- Approved current-MVP mapping: Appearance is manual visual; pH requires PH_METER; Methanol requires GC; Formaldehyde requires HPLC; COD, Ammonia, and Suspended Solids are manual/not currently controlled because their equipment is not yet in instrument master data.
+
 ## Verification
 - iteration_1.json: 33/33 backend, frontend 100%
 - iteration_2.json: 70/70 backend, frontend 100%
@@ -79,6 +86,8 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - iteration_7.json: 125/125 backend, frontend disposition surface 100%, no open issues
 - iteration_10.json: independent CoA verification 100% — incomplete CoA control disabled with named parameter, controlled intercepted 422 toast, and eligible QA-approved CoA request 200 with one print invocation; no runtime overlay or unhandled rejection
 - 2026-09-07 CoA regression checks: frontend helper tests 4/4, focused backend completeness tests 7/7, full backend suite 187/187 (two pre-existing pytest deprecation warnings)
+- iteration_11.json: independent sample instrument-traceability verification 100% — all required valid/invalid, historical, manual, frontend selection, and CoA scenarios passed; no runtime overlay or unhandled rejection
+- 2026-09-07 instrument-traceability checks: frontend helper tests 8/8, focused backend suites 21/21, full backend suite 201/201 (two pre-existing pytest deprecation warnings)
 
 ## Code quality remediation round 2 (iteration 6)
 - Frontend decomposition: `useBatch` hook (loading, refresh, memoized lookups) plus `BatchHeader`, `BatchResultsTable`, `QcActionsPanel`, `QaActionsPanel`, `CoaSection`, `BatchHistory`, `SendCoaDialog`/`ReissueCoaDialog`, `NewBatchDialog`, `BatchTable`, `CustomerCard`, customer/instrument dialogs, `LoginForm`/`DemoAccounts`, `Sidebar`/`TopBar` — BatchDetail 634 → ~200 lines

@@ -83,6 +83,8 @@ class InstrumentIn(BaseModel):
     calibration_due: str
     service_due: str
     active: bool = True
+    category: str = ""
+    availability_status: str = "AVAILABLE"
 
 
 class ContactIn(BaseModel):
@@ -271,11 +273,21 @@ async def list_instruments(user: dict = CU()):
     for i in items:
         i["in_calibration"] = i["calibration_due"] >= today
         i["in_service"] = i["service_due"] >= today
+        i["availability_status"] = i.get("availability_status", "AVAILABLE")
+        i["eligible"] = (
+            i.get("active", False)
+            and i["in_calibration"]
+            and i["in_service"]
+            and i["availability_status"] == "AVAILABLE"
+            and bool(i.get("category"))
+        )
     return items
 
 
 @router.post("/instruments")
 async def create_instrument(body: InstrumentIn, user: dict = RR("admin", "qa")):
+    if body.availability_status not in ("AVAILABLE", "UNAVAILABLE", "FAILED"):
+        raise HTTPException(status_code=400, detail="Invalid instrument availability status")
     doc = {"id": new_id(), **body.model_dump(), "created_at": now_iso()}
     await db.instruments.insert_one(dict(doc))
     await audit(user, "CREATE", "instrument", doc["id"], after=doc)
@@ -287,6 +299,8 @@ async def update_instrument(instrument_id: str, body: InstrumentIn, user: dict =
     before = await db.instruments.find_one({"id": instrument_id}, {"_id": 0})
     if not before:
         raise HTTPException(status_code=404, detail="Instrument not found")
+    if body.availability_status not in ("AVAILABLE", "UNAVAILABLE", "FAILED"):
+        raise HTTPException(status_code=400, detail="Invalid instrument availability status")
     await db.instruments.update_one({"id": instrument_id}, {"$set": body.model_dump()})
     after = await db.instruments.find_one({"id": instrument_id}, {"_id": 0})
     await audit(user, "UPDATE", "instrument", instrument_id, before=before, after=after)
@@ -1197,12 +1211,15 @@ async def seed_batch_module():
         await db.instruments.insert_many([
             {"id": new_id(), "name": "HPLC-01", "instrument_code": "HPLC-01",
              "calibration_due": "2027-01-31", "service_due": "2027-01-31", "active": True,
+             "category": "HPLC", "availability_status": "AVAILABLE",
              "created_at": now_iso()},
             {"id": new_id(), "name": "pH Meter PH-204", "instrument_code": "PH-204",
              "calibration_due": "2027-03-15", "service_due": "2027-03-15", "active": True,
+             "category": "PH_METER", "availability_status": "AVAILABLE",
              "created_at": now_iso()},
             {"id": new_id(), "name": "GC-Legacy-99 (overdue)", "instrument_code": "GC-99",
              "calibration_due": "2025-01-01", "service_due": "2025-01-01", "active": True,
+             "category": "GC", "availability_status": "AVAILABLE",
              "created_at": now_iso()},
         ])
     if await db.customers.count_documents({}) == 0:

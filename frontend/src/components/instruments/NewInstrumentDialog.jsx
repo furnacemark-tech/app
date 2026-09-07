@@ -52,6 +52,36 @@ export const NewInstrumentDialog = ({ open, onOpenChange, form, onFormChange, on
             />
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="label-caps">Category</Label>
+            <select
+              className="mt-1.5 h-9 w-full border border-slate-300 rounded px-2 text-sm bg-white"
+              data-testid="instrument-category-select"
+              required
+              value={form.category}
+              onChange={(e) => onFormChange({ ...form, category: e.target.value })}
+            >
+              <option value="">Select category…</option>
+              <option value="PH_METER">pH meter</option>
+              <option value="HPLC">HPLC</option>
+              <option value="GC">GC</option>
+            </select>
+          </div>
+          <div>
+            <Label className="label-caps">Availability</Label>
+            <select
+              className="mt-1.5 h-9 w-full border border-slate-300 rounded px-2 text-sm bg-white"
+              data-testid="instrument-availability-select"
+              value={form.availability_status}
+              onChange={(e) => onFormChange({ ...form, availability_status: e.target.value })}
+            >
+              <option value="AVAILABLE">Available</option>
+              <option value="UNAVAILABLE">Unavailable</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+        </div>
         <Button type="submit" data-testid="submit-instrument-btn" className="w-full bg-[#002FA7] hover:bg-[#00248a] text-white">
           Register
         </Button>

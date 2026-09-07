@@ -1,6 +1,7 @@
 """LIMS backend API tests"""
 import os
 import time
+import uuid
 import pytest
 import requests
 
@@ -111,12 +112,30 @@ class TestSeed:
 # ---------------- FULL SAMPLE WORKFLOW ----------------
 class TestWorkflow:
     @pytest.fixture(scope="class")
-    def context(self, qc_session, qa_session):
+    def context(self, qc_session, qa_session, admin_session):
         pts = qc_session.get(f"{API}/sample-points").json()
         fe = next(p for p in pts if p["name"] == "Final Effluent")
         params = {p["name"]: p for p in qc_session.get(f"{API}/parameters").json()}
         specs = qc_session.get(f"{API}/specifications", params={"sample_point_id": fe["id"]}).json()
-        return {"fe": fe, "params": params, "specs": specs, "qc": qc_session, "qa": qa_session}
+        gc_code = f"GC-WORKFLOW-{uuid.uuid4().hex[:8]}"
+        instrument = admin_session.post(f"{API}/instruments", json={
+            "name": gc_code,
+            "instrument_code": gc_code,
+            "calibration_due": "2030-01-01",
+            "service_due": "2030-01-01",
+            "active": True,
+            "category": "GC",
+            "availability_status": "AVAILABLE",
+        })
+        assert instrument.status_code == 200, instrument.text
+        return {
+            "fe": fe,
+            "params": params,
+            "specs": specs,
+            "qc": qc_session,
+            "qa": qa_session,
+            "valid_gc_code": gc_code,
+        }
 
     def test_qc_creates_sample(self, context):
         r = context["qc"].post(f"{API}/samples", json={
@@ -139,12 +158,24 @@ class TestWorkflow:
         # Methanol/Formaldehyde/Suspended Solids are set to PASS values to keep the overall_result
         # driven by the Ammonia FAIL as the pre-existing assertions expect.
         results = [
-            {"parameter_id": params["pH"]["id"], "value_numeric": 7.0},
+            {
+                "parameter_id": params["pH"]["id"],
+                "value_numeric": 7.0,
+                "instrument_id": "PH-204",
+            },
             {"parameter_id": params["COD"]["id"], "value_numeric": 750.0},
             {"parameter_id": params["Ammonia"]["id"], "value_numeric": 100.0},
             {"parameter_id": params["Appearance"]["id"], "value_text": "Clear Colourless"},
-            {"parameter_id": params["Methanol"]["id"], "value_numeric": 5.0},
-            {"parameter_id": params["Formaldehyde"]["id"], "value_numeric": 1.0},
+            {
+                "parameter_id": params["Methanol"]["id"],
+                "value_numeric": 5.0,
+                "instrument_id": context["valid_gc_code"],
+            },
+            {
+                "parameter_id": params["Formaldehyde"]["id"],
+                "value_numeric": 1.0,
+                "instrument_id": "HPLC-01",
+            },
             {"parameter_id": params["Suspended Solids"]["id"], "value_numeric": 100.0},
         ]
         r = context["qc"].post(f"{API}/samples/{sid}/results", json={"results": results})
