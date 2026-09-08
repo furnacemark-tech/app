@@ -1,0 +1,206 @@
+LIMS-Rebuild source checkpoint manifest
+Checkpoint: LIMS-Rebuild-checkpoint-2026-09-07-instrument-traceability-fix.zip
+SHA-256: 5acb183fcb816ac288d9fa0cbe78181fae98ee522a37b2db1e5c95377008db22
+Archive bytes: 444762
+Included files: 178
+
+Scope:
+- Current source, tests, scripts, configuration examples, and GitHub workflows.
+- Excluded: .env files, secrets, node_modules, virtual environments, caches,
+  compiled files, MongoDB data, logs, build/dist/coverage output, .git,
+  and all prior checkpoint archives and manifests.
+
+Latest verified test results:
+- Frontend focused regression: 8/8 passed.
+- Backend focused regression: 21/21 passed.
+- Full backend regression suite: 201/201 passed.
+- Independent verification: /app/test_reports/iteration_11.json.
+
+Instrument traceability implementation files:
+- backend/instrument_traceability.py
+- backend/server.py
+- backend/batches.py
+- frontend/src/pages/SampleDetail.jsx
+- frontend/src/lib/instrumentTraceability.js
+- frontend/src/pages/Instruments.jsx
+- frontend/src/components/instruments/NewInstrumentDialog.jsx
+
+Included file list:
+- .emergent/cron/applied.hash
+- .emergent/cron/dispatch_webhook.sh
+- .emergent/cron/watch_crons.sh
+- .emergent/cron/webhook-crons
+- .emergent/cron/webhook_crond.sh
+- .emergent/emergent.yml
+- .emergent/markers/.bootstrap-complete
+- .emergent/markers/.restore-complete
+- .emergent/system_deps.txt
+- .gitconfig
+- .github/workflows/auth-security-tests.yml
+- .gitignore
+- .ruff_cache/.gitignore
+- .ruff_cache/0.16.5/1013185694212426772
+- .ruff_cache/0.16.5/14984366893502950777
+- .ruff_cache/0.16.5/1698039101316153920
+- .ruff_cache/0.16.5/3060928685072573134
+- .ruff_cache/0.16.6/1013185694212426772
+- .ruff_cache/0.16.6/14984366893502950777
+- .ruff_cache/0.16.6/1698039101316153920
+- .ruff_cache/0.16.6/3060928685072573134
+- .ruff_cache/CACHEDIR.TAG
+- README.md
+- app.code-workspaceLIMS.code-workspace
+- backend/auth.py
+- backend/batches.py
+- backend/database.py
+- backend/instrument_traceability.py
+- backend/pytest.ini
+- backend/requirements.txt
+- backend/server.py
+- backend/tests/backend_test.py
+- backend/tests/conftest.py
+- backend/tests/test_auth_security.py
+- backend/tests/test_auth_unified.py
+- backend/tests/test_batches.py
+- backend/tests/test_iteration3.py
+- backend/tests/test_iteration8_verify.py
+- backend/tests/test_oos_disposition.py
+- backend/tests/test_sample_completeness.py
+- backend/tests/test_sample_instrument_traceability.py
+- design_guidlines
+- frontend/.gitignore
+- frontend/README.md
+- frontend/components.json
+- frontend/craco.config.js
+- frontend/jsconfig.json
+- frontend/package.json
+- frontend/plugins/health-check/health-endpoints.js
+- frontend/plugins/health-check/webpack-health-plugin.js
+- frontend/postcss.config.js
+- frontend/public/index.html
+- frontend/src/App.css
+- frontend/src/App.js
+- frontend/src/components/Chrome.jsx
+- frontend/src/components/Layout.jsx
+- frontend/src/components/StabilityAlerts.jsx
+- frontend/src/components/StatusBadge.jsx
+- frontend/src/components/auth/ChangePasswordGate.jsx
+- frontend/src/components/auth/LoginForm.jsx
+- frontend/src/components/batch/BatchHeader.jsx
+- frontend/src/components/batch/BatchHistory.jsx
+- frontend/src/components/batch/BatchResultsTable.jsx
+- frontend/src/components/batch/BatchTable.jsx
+- frontend/src/components/batch/CoaDialogs.jsx
+- frontend/src/components/batch/CoaSection.jsx
+- frontend/src/components/batch/NewBatchDialog.jsx
+- frontend/src/components/batch/QaActionsPanel.jsx
+- frontend/src/components/batch/QcActionsPanel.jsx
+- frontend/src/components/customers/CustomerCard.jsx
+- frontend/src/components/customers/CustomerDialogs.jsx
+- frontend/src/components/instruments/NewInstrumentDialog.jsx
+- frontend/src/components/ui/accordion.jsx
+- frontend/src/components/ui/alert-dialog.jsx
+- frontend/src/components/ui/alert.jsx
+- frontend/src/components/ui/aspect-ratio.jsx
+- frontend/src/components/ui/avatar.jsx
+- frontend/src/components/ui/badge.jsx
+- frontend/src/components/ui/breadcrumb.jsx
+- frontend/src/components/ui/button.jsx
+- frontend/src/components/ui/calendar.jsx
+- frontend/src/components/ui/card.jsx
+- frontend/src/components/ui/carousel.jsx
+- frontend/src/components/ui/checkbox.jsx
+- frontend/src/components/ui/collapsible.jsx
+- frontend/src/components/ui/command.jsx
+- frontend/src/components/ui/context-menu.jsx
+- frontend/src/components/ui/dialog.jsx
+- frontend/src/components/ui/drawer.jsx
+- frontend/src/components/ui/dropdown-menu.jsx
+- frontend/src/components/ui/form.jsx
+- frontend/src/components/ui/hover-card.jsx
+- frontend/src/components/ui/input-otp.jsx
+- frontend/src/components/ui/input.jsx
+- frontend/src/components/ui/label.jsx
+- frontend/src/components/ui/menubar.jsx
+- frontend/src/components/ui/navigation-menu.jsx
+- frontend/src/components/ui/pagination.jsx
+- frontend/src/components/ui/popover.jsx
+- frontend/src/components/ui/progress.jsx
+- frontend/src/components/ui/radio-group.jsx
+- frontend/src/components/ui/resizable.jsx
+- frontend/src/components/ui/scroll-area.jsx
+- frontend/src/components/ui/select.jsx
+- frontend/src/components/ui/separator.jsx
+- frontend/src/components/ui/sheet.jsx
+- frontend/src/components/ui/skeleton.jsx
+- frontend/src/components/ui/slider.jsx
+- frontend/src/components/ui/sonner.jsx
+- frontend/src/components/ui/switch.jsx
+- frontend/src/components/ui/table.jsx
+- frontend/src/components/ui/tabs.jsx
+- frontend/src/components/ui/textarea.jsx
+- frontend/src/components/ui/toast.jsx
+- frontend/src/components/ui/toaster.jsx
+- frontend/src/components/ui/toggle-group.jsx
+- frontend/src/components/ui/toggle.jsx
+- frontend/src/components/ui/tooltip.jsx
+- frontend/src/constants/testIds/auth.js
+- frontend/src/constants/testIds/home.js
+- frontend/src/constants/testIds/index.js
+- frontend/src/context/AuthContext.js
+- frontend/src/hooks/use-toast.js
+- frontend/src/hooks/useBatch.js
+- frontend/src/index.css
+- frontend/src/index.js
+- frontend/src/lib/api.js
+- frontend/src/lib/coaEligibility.js
+- frontend/src/lib/instrumentTraceability.js
+- frontend/src/lib/instrumentTraceability.test.js
+- frontend/src/lib/utils.js
+- frontend/src/pages/AuditTrail.jsx
+- frontend/src/pages/BatchDetail.jsx
+- frontend/src/pages/Batches.jsx
+- frontend/src/pages/Customers.jsx
+- frontend/src/pages/Dashboard.jsx
+- frontend/src/pages/Instruments.jsx
+- frontend/src/pages/Login.jsx
+- frontend/src/pages/OOSLog.jsx
+- frontend/src/pages/Products.jsx
+- frontend/src/pages/QAQueues.jsx
+- frontend/src/pages/QAReview.jsx
+- frontend/src/pages/SampleDetail.jsx
+- frontend/src/pages/SampleDetail.test.jsx
+- frontend/src/pages/Samples.jsx
+- frontend/src/pages/Specifications.jsx
+- frontend/src/pages/UsersPage.jsx
+- frontend/tailwind.config.js
+- frontend/yarn.lock
+- package-lock
+- scripts/seed_test_accounts.py
+- test_reports/.gitkeep
+- test_reports/iteration_1.json
+- test_reports/iteration_10.json
+- test_reports/iteration_11.json
+- test_reports/iteration_2.json
+- test_reports/iteration_3.json
+- test_reports/iteration_4.json
+- test_reports/iteration_5.json
+- test_reports/iteration_6.json
+- test_reports/iteration_7.json
+- test_reports/iteration_8.json
+- test_reports/iteration_9.json
+- test_reports/pytest/.gitkeep
+- test_reports/pytest/all_results.xml
+- test_reports/pytest/batches_results.xml
+- test_reports/pytest/iteration10.xml
+- test_reports/pytest/iteration11.xml
+- test_reports/pytest/iteration3_results.xml
+- test_reports/pytest/iteration4_all.xml
+- test_reports/pytest/iteration5.xml
+- test_reports/pytest/iteration6.xml
+- test_reports/pytest/iteration7.xml
+- test_reports/pytest/iteration8.xml
+- test_reports/pytest/iteration9.xml
+- test_reports/pytest/pytest_results.xml
+- test_result.md
+- tests/__init__.py
