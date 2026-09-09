@@ -1,0 +1,133 @@
+{
+  "backup": {
+    "filename": "preview_database_backup_2026-09-09.archive.gz",
+    "sha256": "923d5ae933b5a5d7137b76a92dfedfa3f3be5f72e6e62efb8780220f60ac46ad"
+  },
+  "collection_counts_after": {
+    "audit_trail": 2891,
+    "auth_sessions": 2099,
+    "batches": 0,
+    "customers": 2,
+    "instruments": 4,
+    "login_attempts": 0,
+    "oos_log": 18,
+    "parameters": 7,
+    "products": 3,
+    "sample_points": 6,
+    "samples": 16,
+    "spec_versions": 16,
+    "specifications": 28,
+    "users": 14
+  },
+  "collection_counts_before": {
+    "audit_trail": 9128,
+    "auth_sessions": 2604,
+    "batches": 724,
+    "customers": 15,
+    "instruments": 74,
+    "login_attempts": 0,
+    "oos_log": 104,
+    "parameters": 226,
+    "products": 99,
+    "sample_points": 324,
+    "samples": 452,
+    "spec_versions": 138,
+    "specifications": 415,
+    "users": 308
+  },
+  "completed_at_utc": "2026-09-09T12:43:25.538335+00:00",
+  "execution": [
+    {
+      "collection": "audit_trail",
+      "deleted": 6237,
+      "expected": 6237
+    },
+    {
+      "collection": "auth_sessions",
+      "deleted": 505,
+      "expected": 505
+    },
+    {
+      "collection": "oos_log",
+      "deleted": 86,
+      "expected": 86
+    },
+    {
+      "collection": "spec_versions",
+      "deleted": 122,
+      "expected": 122
+    },
+    {
+      "collection": "samples",
+      "deleted": 436,
+      "expected": 436
+    },
+    {
+      "collection": "specifications",
+      "deleted": 387,
+      "expected": 387
+    },
+    {
+      "collection": "batches",
+      "deleted": 724,
+      "expected": 724
+    },
+    {
+      "collection": "instruments",
+      "deleted": 70,
+      "expected": 70
+    },
+    {
+      "collection": "parameters",
+      "deleted": 219,
+      "expected": 219
+    },
+    {
+      "collection": "customers",
+      "deleted": 13,
+      "expected": 13
+    },
+    {
+      "collection": "products",
+      "deleted": 96,
+      "expected": 96
+    },
+    {
+      "collection": "sample_points",
+      "deleted": 318,
+      "expected": 318
+    },
+    {
+      "collection": "users",
+      "deleted": 294,
+      "expected": 294
+    }
+  ],
+  "frozen_manifest": {
+    "filename": "cleanup_candidates_dry_run_2026-09-09.json",
+    "sha256": "b966cfd81cc9d95183fdda4c488f05185a93b680adb2983bf668cb2fd506aa79"
+  },
+  "post_deletion_checks": {
+    "all_frozen_candidates_absent": true,
+    "orphan_references": 0,
+    "protected_record_lineage_preserved": true
+  },
+  "pre_deletion_checks": {
+    "candidate_count": 9507,
+    "candidate_to_protected_references": 0,
+    "projected_orphans": 0,
+    "protected_to_candidate_references": 0
+  },
+  "protected_record": {
+    "audit_event_count": 23,
+    "record_id": "REC-20260908-0201",
+    "sample_id": "9f3f5364-f94b-4922-ac42-2aba03ce42cd",
+    "sample_point_id": "20781f3a-5a6e-453a-9432-16e211208285",
+    "sample_point_name": "Final Effluent",
+    "specification_count": 7
+  },
+  "sensitive": true,
+  "started_at_utc": "2026-09-09T12:43:25.415891+00:00",
+  "status": "COMPLETED",
+  "total_deleted": 9507
+}
