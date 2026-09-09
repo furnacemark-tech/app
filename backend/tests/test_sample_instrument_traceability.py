@@ -1,5 +1,4 @@
 """Regression coverage for controlled sample instrument traceability."""
-import asyncio
 import os
 import uuid
 from pathlib import Path
@@ -13,6 +12,7 @@ load_dotenv(PROJECT_ROOT / "frontend" / ".env")
 load_dotenv(PROJECT_ROOT / "backend" / ".env")
 
 from database import db
+from conftest import run_db
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 ADMIN = {"email": "admin@lims.local", "password": "Admin@123"}
@@ -211,8 +211,8 @@ def test_historical_invalid_traceability_blocks_submit_approval_and_coa(master_d
     saved = save_numeric(qc, sample["id"], parameter, "PH-204")
     assert saved.status_code == 200, saved.text
 
-    async def set_historical_invalid_pending_review():
-        await db.samples.update_one(
+    run_db(
+        lambda: db.samples.update_one(
             {"id": sample["id"]},
             {
                 "$set": {
@@ -221,8 +221,7 @@ def test_historical_invalid_traceability_blocks_submit_approval_and_coa(master_d
                 }
             },
         )
-
-    asyncio.run(set_historical_invalid_pending_review())
+    )
     detail = qc.get(f"{BASE}/samples/{sample['id']}", timeout=30).json()
     assert detail["instrument_issues"][0]["parameter"] == "pH"
     instrument_issue(

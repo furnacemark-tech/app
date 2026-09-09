@@ -2,9 +2,16 @@
 import os
 import time
 import uuid
+from pathlib import Path
+
 import pytest
 import requests
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+from database import db
+from conftest import run_db
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://audit-data-lab.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
@@ -128,7 +135,7 @@ class TestWorkflow:
             "availability_status": "AVAILABLE",
         })
         assert instrument.status_code == 200, instrument.text
-        return {
+        context = {
             "fe": fe,
             "params": params,
             "specs": specs,
@@ -136,6 +143,9 @@ class TestWorkflow:
             "qa": qa_session,
             "valid_gc_code": gc_code,
         }
+        yield context
+
+        run_db(lambda: db.instruments.delete_one({"instrument_code": gc_code}))
 
     def test_qc_creates_sample(self, context):
         r = context["qc"].post(f"{API}/samples", json={

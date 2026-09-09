@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from auth import get_current_user, require_roles
 from database import db
+from sample_qa_queue import build_sample_qa_queues
 
 router = APIRouter(prefix="/api")
 
@@ -1107,7 +1108,7 @@ async def coa_pdf(batch_id: str, coa_id: str, user: dict = CU()):
 
 
 @router.get("/qa/queues")
-async def qa_queues(user: dict = CU()):
+async def qa_queues(user: dict = RR("admin", "qa")):
     fields = {"_id": 0, "history": 0}
     awaiting = await db.batches.find({"status": "SUBMITTED"}, fields).sort("created_at", -1).to_list(300)
     on_hold = await db.batches.find({"status": {"$in": ["ON_HOLD", "RETURNED"]}}, fields).sort("created_at", -1).to_list(300)
@@ -1122,9 +1123,15 @@ async def qa_queues(user: dict = CU()):
                                 "issue_date": c["issue_date"]})
     reissue = [{"batch_id": b["id"], "batch_number": b["batch_number"], "product_name": b["product_name"]}
                for b in released if b.get("coa_reissue_required")]
-    samples_pending = await db.samples.count_documents({"qa_status": "Pending Review"})
-    return {"awaiting_review": awaiting, "on_hold": on_hold, "certificates_to_send": to_send,
-            "reissue_required": reissue, "samples_pending_review": samples_pending}
+    sample_queues = await build_sample_qa_queues()
+    return {
+        "awaiting_review": awaiting,
+        "on_hold": on_hold,
+        "certificates_to_send": to_send,
+        "reissue_required": reissue,
+        "samples_pending_review": sample_queues["sample_queue_counts"]["ready_for_review"],
+        **sample_queues,
+    }
 
 
 @router.get("/alerts/expiring")

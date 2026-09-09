@@ -156,14 +156,21 @@ class TestNoStartupCredentialReset:
 
 class TestFirstRunProvisioning:
     def test_status_reports_disabled_when_admin_exists(self):
-        r = requests.get(f"{API}/auth/provisioning-status", timeout=30)
+        r = request_with_retry("GET", f"{API}/auth/provisioning-status")
         assert r.status_code == 200
         assert r.json()["administrator_exists"] is True
         assert r.json()["first_run_available"] is False
 
     def test_first_run_blocked_once_admin_exists(self):
-        r = requests.post(f"{API}/auth/first-run", json={
-            "email": unique_email("root"), "password": "AVeryLongPassword123!", "name": "Second Admin"}, timeout=30)
+        r = request_with_retry(
+            "POST",
+            f"{API}/auth/first-run",
+            json={
+                "email": unique_email("root"),
+                "password": "AVeryLongPassword123!",
+                "name": "Second Admin",
+            },
+        )
         assert r.status_code == 403
         assert "already exists" in r.json()["detail"]
 

@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  SAMPLE_QUEUE_FILTERS,
+  sampleQueueCount,
+  sampleQueueRows,
+  totalSampleAttentionRecords,
+} from "@/lib/qaQueue";
 
 const Panel = ({ title, count, children, testId }) => (
   <div className="bg-white border border-slate-200 rounded-md" data-testid={testId}>
@@ -16,6 +23,7 @@ const Panel = ({ title, count, children, testId }) => (
 
 export default function QAQueues() {
   const [q, setQ] = useState(null);
+  const [sampleFilter, setSampleFilter] = useState("ready_for_review");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +31,9 @@ export default function QAQueues() {
   }, []);
 
   if (!q) return <div className="text-sm text-slate-500">Loading queues…</div>;
+
+  const sampleRows = sampleQueueRows(q, sampleFilter);
+  const sampleAttentionCount = totalSampleAttentionRecords(q);
 
   const batchTable = (rows, prefix) => (
     <Table className="data-table">
@@ -57,6 +68,63 @@ export default function QAQueues() {
     </Table>
   );
 
+  const sampleTable = (rows) => (
+    <Table className="data-table">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Record</TableHead>
+          <TableHead>Sample point</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Result</TableHead>
+          <TableHead>QA status</TableHead>
+          <TableHead>Attention reason</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody data-testid="sample-qa-queue-body">
+        {rows.map((sample) => (
+          <TableRow
+            key={sample.id}
+            data-testid={`sample-qa-queue-row-${sample.record_id}`}
+            className="hover:bg-slate-50 transition-colors duration-200"
+          >
+            <TableCell className="font-mono text-xs">
+              <Link
+                to={`/samples/${sample.id}`}
+                data-testid={`sample-qa-queue-link-${sample.record_id}`}
+                className="underline underline-offset-2"
+              >
+                {sample.record_id}
+              </Link>
+            </TableCell>
+            <TableCell>{sample.sample_point_name}</TableCell>
+            <TableCell className="tabnum">{sample.sample_date}</TableCell>
+            <TableCell><StatusBadge value={sample.overall_result} /></TableCell>
+            <TableCell><StatusBadge value={sample.qa_status} /></TableCell>
+            <TableCell
+              className="max-w-md text-xs text-slate-700"
+              data-testid={`sample-qa-attention-${sample.record_id}`}
+            >
+              {sample.attention_reasons.length > 0
+                ? sample.attention_reasons.join(" · ")
+                : "Awaiting QA decision."}
+            </TableCell>
+          </TableRow>
+        ))}
+        {rows.length === 0 && (
+          <TableRow>
+            <TableCell
+              colSpan={6}
+              className="text-sm text-slate-500"
+              data-testid="sample-qa-empty-state"
+            >
+              No records match this QA classification.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <div className="space-y-5" data-testid="qa-queues-page">
       <div>
@@ -66,6 +134,27 @@ export default function QAQueues() {
           {q.samples_pending_review > 0 && ` · ${q.samples_pending_review} sample record(s) also pending review.`}
         </p>
       </div>
+
+      <Panel
+        title="Sample QA attention"
+        count={sampleAttentionCount}
+        testId="sample-qa-queue-panel"
+      >
+        <div className="flex flex-wrap gap-2 border-b border-slate-200 p-3">
+          {SAMPLE_QUEUE_FILTERS.map((filter) => (
+            <Button
+              key={filter.key}
+              variant={sampleFilter === filter.key ? "default" : "outline"}
+              size="sm"
+              data-testid={`sample-qa-filter-${filter.key}`}
+              onClick={() => setSampleFilter(filter.key)}
+            >
+              {filter.label} ({sampleQueueCount(q, filter.key)})
+            </Button>
+          ))}
+        </div>
+        {sampleTable(sampleRows)}
+      </Panel>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <Panel title="Batches awaiting review" count={q.awaiting_review.length} testId="queue-awaiting-review">

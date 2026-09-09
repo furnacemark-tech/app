@@ -59,6 +59,12 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - Existing historical references are preserved and assessed on read: a uniquely matching `instrument_code` resolves without rewriting; unresolved, ambiguous, incompatible, inactive, or unavailable references are visibly flagged and block ordinary submission, QA approval, and CoA generation until an audited result amendment corrects them.
 - Approved current-MVP mapping: Appearance is manual visual; pH requires PH_METER; Methanol requires GC; Formaldehyde requires HPLC; COD, Ammonia, and Suspended Solids are manual/not currently controlled because their equipment is not yet in instrument master data.
 
+### Iteration 12 (QA sample attention queues — 2026-09-09)
+- Added an authoritative QA/Admin-only sample queue payload that reuses the shared completeness helper and instrument-traceability assessment; no sample lifecycle, approval, release, OOS, CoA, or result-entry rules changed.
+- Queue classifications are display categories rather than new lifecycle states: ready (Pending Review, complete, traceable); blocked (visible to QA with outstanding results); OOS/investigation (failed result, open OOS, or Requires Investigation); instrument issue (invalid required traceability); approved; and returned/rejected (Requires Investigation).
+- Each affected row exposes all applicable classification memberships and human-readable attention reasons; sample rows link to the record, classification counts are filterable, and the sample queue panel appears before existing batch queues.
+- QA/Admin access to `/api/qa/queues` is enforced server-side; QC receives 403 at the API and access-denied UI. QA queue fixtures use `QAQ-*` identifiers and clean their samples, specifications, points, OOS records, and audit entries after execution.
+
 ## Verification
 - iteration_1.json: 33/33 backend, frontend 100%
 - iteration_2.json: 70/70 backend, frontend 100%
@@ -88,6 +94,8 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - 2026-09-07 CoA regression checks: frontend helper tests 4/4, focused backend completeness tests 7/7, full backend suite 187/187 (two pre-existing pytest deprecation warnings)
 - iteration_11.json: independent sample instrument-traceability verification 100% — all required valid/invalid, historical, manual, frontend selection, and CoA scenarios passed; no runtime overlay or unhandled rejection
 - 2026-09-07 instrument-traceability checks: frontend helper tests 8/8, focused backend suites 21/21, full backend suite 201/201 (two pre-existing pytest deprecation warnings)
+- iteration_12.json: independent QA queue verification 100% — all six classifications, multi-reason visibility, row links, filters, QA/Admin API access, QC denial, desktop/mobile rendering, and no runtime errors
+- 2026-09-09 QA queue checks: frontend focused tests 11/11, production build passed, backend focused suites 29/29, full backend suite 209/209 run serially (two pre-existing pytest deprecation warnings)
 
 ## Code quality remediation round 2 (iteration 6)
 - Frontend decomposition: `useBatch` hook (loading, refresh, memoized lookups) plus `BatchHeader`, `BatchResultsTable`, `QcActionsPanel`, `QaActionsPanel`, `CoaSection`, `BatchHistory`, `SendCoaDialog`/`ReissueCoaDialog`, `NewBatchDialog`, `BatchTable`, `CustomerCard`, customer/instrument dialogs, `LoginForm`/`DemoAccounts`, `Sidebar`/`TopBar` — BatchDetail 634 → ~200 lines
@@ -98,5 +106,6 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 ## Backlog
 - P0: clarify and implement the previously requested ChatGPT or Claude LIMS use case before adding any AI integration
 - P1: per-day batch/record counters, stability alert email digest, QA queue filters
+- P1: paginate or server-filter `sample_qa_queue.build_sample_qa_queues()` before QA attention records exceed its current 500-record read bound
 - P1: conditional, concessionary, or exceptional release workflow (explicitly deferred)
 - P2: derived/calculated parameters, e-signature meaning statements, change control register, trend pages per sample point, split server.py into routers, FastAPI lifespan migration

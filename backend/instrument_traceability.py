@@ -104,6 +104,13 @@ async def assess_instrument_traceability(
     if resolution_error:
         assessment["reason"] = resolution_error
         return assessment
+    assessment.update(
+        {
+            "registered_instrument_id": instrument["id"],
+            "registered_instrument_code": instrument.get("instrument_code", ""),
+            "registered_instrument_name": instrument.get("name", ""),
+        }
+    )
     if instrument.get("category") != category:
         assessment["reason"] = f"A registered {category} instrument is required for this method."
         return assessment
@@ -118,9 +125,6 @@ async def assess_instrument_traceability(
             "state": "VALID",
             "is_valid": True,
             "reason": "",
-            "registered_instrument_id": instrument["id"],
-            "registered_instrument_code": instrument.get("instrument_code", ""),
-            "registered_instrument_name": instrument.get("name", ""),
         }
     )
     return assessment

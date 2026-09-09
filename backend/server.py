@@ -26,6 +26,7 @@ from instrument_traceability import (
     sample_with_traceability,
     seed_traceability_master_data,
 )
+from sample_integrity import outstanding_required_parameters
 
 app = FastAPI(title="LIMS API")
 api = APIRouter(prefix="/api")
@@ -390,7 +391,7 @@ async def update_user(user_id: str, body: UserUpdate, user: dict = Depends(requi
 # ---------- Sample points ----------
 @api.get("/sample-points")
 async def list_sample_points(user: dict = Depends(get_current_user)):
-    return await db.sample_points.find({}, {"_id": 0}).sort("name", 1).to_list(200)
+    return await db.sample_points.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
 
 
 @api.post("/sample-points")
@@ -561,29 +562,6 @@ def overall_result(results: list, complete: bool) -> str:
     if "WARN" in statuses:
         return "WARN"
     return "PASS" if results else "PENDING"
-
-
-async def outstanding_required_parameters(sample: dict) -> list:
-    """Return names of active-spec parameters that still lack a definitive result.
-
-    Definitive = one of PASS/WARN/FAIL on the stored result. NO_SPEC or PENDING
-    values (or missing entries) count as outstanding.
-    """
-    specs = await db.specifications.find(
-        {"sample_point_id": sample["sample_point_id"], "active": True},
-        {"_id": 0, "parameter_id": 1},
-    ).to_list(500)
-    required_ids = [s["parameter_id"] for s in specs]
-    if not required_ids:
-        return []
-    definitive = {r["parameter_id"] for r in sample.get("results", [])
-                  if r.get("status") in ("PASS", "WARN", "FAIL")}
-    missing = [rid for rid in required_ids if rid not in definitive]
-    if not missing:
-        return []
-    params = {p["id"]: p.get("name", p["id"])
-              for p in await db.parameters.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)}
-    return [params.get(rid, rid) for rid in missing]
 
 
 @api.post("/samples/{sample_id}/results")
@@ -842,8 +820,12 @@ async def seed_reference_data():
     if await db.parameters.count_documents({}) == 0:
         for p in DEFAULT_PARAMS:
             await db.parameters.insert_one({"id": new_id(), **p, "created_at": now_iso()})
-    if await db.sample_points.count_documents({}) == 0:
-        for name, desc in DEFAULT_POINTS:
+    existing_points = {
+        item["name"]
+        for item in await db.sample_points.find({}, {"_id": 0, "name": 1}).to_list(300)
+    }
+    for name, desc in DEFAULT_POINTS:
+        if name not in existing_points:
             await db.sample_points.insert_one({"id": new_id(), "name": name, "description": desc,
                                                "active": True, "created_at": now_iso()})
 
