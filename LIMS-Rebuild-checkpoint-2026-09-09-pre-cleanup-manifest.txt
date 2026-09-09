@@ -1,0 +1,173 @@
+LIMS-Rebuild pre-cleanup source checkpoint manifest
+Sensitive database artifacts are excluded from this source archive.
+Archive: LIMS-Rebuild-checkpoint-2026-09-09-pre-cleanup.zip
+Archive bytes: 200728
+Archive SHA-256: b119f2b637fb4aa82abc422e3fe5cf50ed28faa6ce68d2ac59dc555c62521cc5
+Included file count: 155
+
+Milestones represented:
+- Successful ordinary-release lifecycle verification.
+- QA work-queue classification.
+- Permanent disposable test-database isolation.
+
+Excluded:
+- Environment files, credentials, database_artifacts, database dumps, MongoDB data,
+  sessions, user data, node_modules, Python caches, .ruff_cache, build output, logs,
+  Git metadata, all previous checkpoint archives, and frontend/yarn.lock.
+
+Included file list:
+- .emergent/cron/applied.hash
+- .emergent/cron/dispatch_webhook.sh
+- .emergent/cron/watch_crons.sh
+- .emergent/cron/webhook-crons
+- .emergent/cron/webhook_crond.sh
+- .emergent/emergent.yml
+- .emergent/markers/.bootstrap-complete
+- .emergent/markers/.restore-complete
+- .emergent/system_deps.txt
+- .gitconfig
+- .github/workflows/auth-security-tests.yml
+- .gitignore
+- LIMS-Rebuild-checkpoint-2026-09-07-coa-fix-manifest.txt
+- LIMS-Rebuild-checkpoint-2026-09-07-instrument-traceability-fix-manifest.txt
+- LIMS-Rebuild-checkpoint-2026-09-07-manifest.txt
+- LIMS-Rebuild-checkpoint-2026-09-08-ordinary-release-manifest.txt
+- README.md
+- app.code-workspaceLIMS.code-workspace
+- backend/auth.py
+- backend/batches.py
+- backend/database.py
+- backend/instrument_traceability.py
+- backend/pytest.ini
+- backend/requirements.txt
+- backend/sample_integrity.py
+- backend/sample_qa_queue.py
+- backend/server.py
+- backend/test_isolation.py
+- backend/tests/ISOLATED_TESTING.md
+- backend/tests/backend_test.py
+- backend/tests/conftest.py
+- backend/tests/test_auth_security.py
+- backend/tests/test_auth_unified.py
+- backend/tests/test_batches.py
+- backend/tests/test_database_isolation.py
+- backend/tests/test_iteration3.py
+- backend/tests/test_iteration8_verify.py
+- backend/tests/test_oos_disposition.py
+- backend/tests/test_sample_completeness.py
+- backend/tests/test_sample_instrument_traceability.py
+- backend/tests/test_sample_qa_queue.py
+- design_guidlines
+- frontend/.gitignore
+- frontend/README.md
+- frontend/components.json
+- frontend/craco.config.js
+- frontend/jsconfig.json
+- frontend/package.json
+- frontend/plugins/health-check/health-endpoints.js
+- frontend/plugins/health-check/webpack-health-plugin.js
+- frontend/postcss.config.js
+- frontend/public/index.html
+- frontend/src/App.css
+- frontend/src/App.js
+- frontend/src/components/Chrome.jsx
+- frontend/src/components/Layout.jsx
+- frontend/src/components/StabilityAlerts.jsx
+- frontend/src/components/StatusBadge.jsx
+- frontend/src/components/auth/ChangePasswordGate.jsx
+- frontend/src/components/auth/LoginForm.jsx
+- frontend/src/components/batch/BatchHeader.jsx
+- frontend/src/components/batch/BatchHistory.jsx
+- frontend/src/components/batch/BatchResultsTable.jsx
+- frontend/src/components/batch/BatchTable.jsx
+- frontend/src/components/batch/CoaDialogs.jsx
+- frontend/src/components/batch/CoaSection.jsx
+- frontend/src/components/batch/NewBatchDialog.jsx
+- frontend/src/components/batch/QaActionsPanel.jsx
+- frontend/src/components/batch/QcActionsPanel.jsx
+- frontend/src/components/customers/CustomerCard.jsx
+- frontend/src/components/customers/CustomerDialogs.jsx
+- frontend/src/components/instruments/NewInstrumentDialog.jsx
+- frontend/src/components/ui/accordion.jsx
+- frontend/src/components/ui/alert-dialog.jsx
+- frontend/src/components/ui/alert.jsx
+- frontend/src/components/ui/aspect-ratio.jsx
+- frontend/src/components/ui/avatar.jsx
+- frontend/src/components/ui/badge.jsx
+- frontend/src/components/ui/breadcrumb.jsx
+- frontend/src/components/ui/button.jsx
+- frontend/src/components/ui/calendar.jsx
+- frontend/src/components/ui/card.jsx
+- frontend/src/components/ui/carousel.jsx
+- frontend/src/components/ui/checkbox.jsx
+- frontend/src/components/ui/collapsible.jsx
+- frontend/src/components/ui/command.jsx
+- frontend/src/components/ui/context-menu.jsx
+- frontend/src/components/ui/dialog.jsx
+- frontend/src/components/ui/drawer.jsx
+- frontend/src/components/ui/dropdown-menu.jsx
+- frontend/src/components/ui/form.jsx
+- frontend/src/components/ui/hover-card.jsx
+- frontend/src/components/ui/input-otp.jsx
+- frontend/src/components/ui/input.jsx
+- frontend/src/components/ui/label.jsx
+- frontend/src/components/ui/menubar.jsx
+- frontend/src/components/ui/navigation-menu.jsx
+- frontend/src/components/ui/pagination.jsx
+- frontend/src/components/ui/popover.jsx
+- frontend/src/components/ui/progress.jsx
+- frontend/src/components/ui/radio-group.jsx
+- frontend/src/components/ui/resizable.jsx
+- frontend/src/components/ui/scroll-area.jsx
+- frontend/src/components/ui/select.jsx
+- frontend/src/components/ui/separator.jsx
+- frontend/src/components/ui/sheet.jsx
+- frontend/src/components/ui/skeleton.jsx
+- frontend/src/components/ui/slider.jsx
+- frontend/src/components/ui/sonner.jsx
+- frontend/src/components/ui/switch.jsx
+- frontend/src/components/ui/table.jsx
+- frontend/src/components/ui/tabs.jsx
+- frontend/src/components/ui/textarea.jsx
+- frontend/src/components/ui/toast.jsx
+- frontend/src/components/ui/toaster.jsx
+- frontend/src/components/ui/toggle-group.jsx
+- frontend/src/components/ui/toggle.jsx
+- frontend/src/components/ui/tooltip.jsx
+- frontend/src/constants/testIds/auth.js
+- frontend/src/constants/testIds/home.js
+- frontend/src/constants/testIds/index.js
+- frontend/src/context/AuthContext.js
+- frontend/src/hooks/use-toast.js
+- frontend/src/hooks/useBatch.js
+- frontend/src/index.css
+- frontend/src/index.js
+- frontend/src/lib/api.js
+- frontend/src/lib/coaEligibility.js
+- frontend/src/lib/instrumentTraceability.js
+- frontend/src/lib/instrumentTraceability.test.js
+- frontend/src/lib/qaQueue.js
+- frontend/src/lib/qaQueue.test.js
+- frontend/src/lib/utils.js
+- frontend/src/pages/AuditTrail.jsx
+- frontend/src/pages/BatchDetail.jsx
+- frontend/src/pages/Batches.jsx
+- frontend/src/pages/Customers.jsx
+- frontend/src/pages/Dashboard.jsx
+- frontend/src/pages/Instruments.jsx
+- frontend/src/pages/Login.jsx
+- frontend/src/pages/OOSLog.jsx
+- frontend/src/pages/Products.jsx
+- frontend/src/pages/QAQueues.jsx
+- frontend/src/pages/QAReview.jsx
+- frontend/src/pages/SampleDetail.jsx
+- frontend/src/pages/SampleDetail.test.jsx
+- frontend/src/pages/Samples.jsx
+- frontend/src/pages/Specifications.jsx
+- frontend/src/pages/UsersPage.jsx
+- frontend/tailwind.config.js
+- package-lock
+- scripts/run_isolated_backend_tests.py
+- scripts/seed_test_accounts.py
+- test_result.md
+- tests/__init__.py
