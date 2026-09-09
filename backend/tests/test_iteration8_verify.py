@@ -1,36 +1,30 @@
 """Iteration 8 focused verification of the review-request items."""
 import os
 import time
-import motor.motor_asyncio
-import asyncio
 import pytest
 import requests
+
+from conftest import run_db
+from database import db
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 ADMIN = ("admin@lims.local", "Admin@123")
 QA = ("qa@lims.local", "Qa@12345")
 QC = ("qc@lims.local", "Qc@12345")
 
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = os.environ.get("DB_NAME", "test_database")
-
-
 @pytest.fixture(autouse=True)
 def clear_login_attempts():
-    async def _do():
-        cli = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
-        await cli[DB_NAME].login_attempts.delete_many({})
-        cli.close()
-    asyncio.run(_do())
+    run_db(lambda: db.login_attempts.delete_many({}))
     yield
 
 
 def clear_must_change(email):
-    async def _do():
-        cli = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
-        await cli[DB_NAME].users.update_one({"email": email}, {"$set": {"must_change_password": False}})
-        cli.close()
-    asyncio.run(_do())
+    run_db(
+        lambda: db.users.update_one(
+            {"email": email},
+            {"$set": {"must_change_password": False}},
+        )
+    )
 
 
 def login(email, password):

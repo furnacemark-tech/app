@@ -65,6 +65,12 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - Each affected row exposes all applicable classification memberships and human-readable attention reasons; sample rows link to the record, classification counts are filterable, and the sample queue panel appears before existing batch queues.
 - QA/Admin access to `/api/qa/queues` is enforced server-side; QC receives 403 at the API and access-denied UI. QA queue fixtures use `QAQ-*` identifiers and clean their samples, specifications, points, OOS records, and audit entries after execution.
 
+### Iteration 13 (fail-closed backend test database isolation — 2026-09-09)
+- Added a single isolated test entrypoint: `scripts/run_isolated_backend_tests.py`. It records preview counts read-only, creates a unique full-match disposable database, starts a local API server on a reserved loopback port, seeds test accounts only in that disposable database, and removes it in `finally` cleanup.
+- Bare backend test collection now fails closed without runner-provided `LIMS_TEST_DB_NAME`, `LIMS_TEST_SERVER_PORT`, and `LIMS_TEST_RUN_ID`. A database name must exactly match `^[a-z][a-z0-9_]{0,47}_test_[a-f0-9]{12,32}$`, differ from the resolved preview database, and contain `_test_`; every drop revalidates the full name.
+- Converted direct test Mongo writes to the shared disposable connection and replaced preview-supervisor restart testing with restart of the local isolated test server. `seed_test_accounts.py` now refuses any non-disposable target.
+- The isolation suite validates refusal of preview/blank/unmarked names, disposable-only writes, failure-path cleanup behavior, unsafe drop refusal, and unchanged preview counts.
+
 ## Verification
 - iteration_1.json: 33/33 backend, frontend 100%
 - iteration_2.json: 70/70 backend, frontend 100%
@@ -96,6 +102,7 @@ Based on an Excel workbook (LIMS_v0.5.4.4 - Validation and state tracking.xlsm),
 - 2026-09-07 instrument-traceability checks: frontend helper tests 8/8, focused backend suites 21/21, full backend suite 201/201 (two pre-existing pytest deprecation warnings)
 - iteration_12.json: independent QA queue verification 100% — all six classifications, multi-reason visibility, row links, filters, QA/Admin API access, QC denial, desktop/mobile rendering, and no runtime errors
 - 2026-09-09 QA queue checks: frontend focused tests 11/11, production build passed, backend focused suites 29/29, full backend suite 209/209 run serially (two pre-existing pytest deprecation warnings)
+- iteration_13.json: independent backend isolation verification passed — separate full-match database and loopback server per run, focused 7/7 and full 216/216, preview counts unchanged, disposable databases removed, and `REC-20260908-0201` preserved
 
 ## Code quality remediation round 2 (iteration 6)
 - Frontend decomposition: `useBatch` hook (loading, refresh, memoized lookups) plus `BatchHeader`, `BatchResultsTable`, `QcActionsPanel`, `QaActionsPanel`, `CoaSection`, `BatchHistory`, `SendCoaDialog`/`ReissueCoaDialog`, `NewBatchDialog`, `BatchTable`, `CustomerCard`, customer/instrument dialogs, `LoginForm`/`DemoAccounts`, `Sidebar`/`TopBar` — BatchDetail 634 → ~200 lines

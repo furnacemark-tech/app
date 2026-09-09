@@ -8,9 +8,11 @@ import pytest
 import jwt
 import requests
 from dotenv import load_dotenv
-from pymongo import MongoClient
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from conftest import run_db
+from database import db
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / "frontend" / ".env")
@@ -20,9 +22,7 @@ API = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 
 def clear_lockouts():
     """Brute-force lockout is intentional; these tests deliberately trigger it, so clear it between tests."""
-    client = MongoClient(os.environ["MONGO_URL"])
-    client[os.environ["DB_NAME"]].login_attempts.delete_many({})
-    client.close()
+    run_db(lambda: db.login_attempts.delete_many({}))
 
 
 @pytest.fixture(autouse=True)
@@ -113,7 +113,7 @@ def unique_email(prefix="user"):
 
 
 class TestNoStartupCredentialReset:
-    def test_existing_password_survives_restart(self, admin_s):
+    def test_existing_password_survives_restart(self, admin_s, restart_isolated_test_server):
         """Change a user's password, restart the backend, and prove startup did not restore anything."""
         account = create_account(admin_s, "restart")
         rotated = f"Rotated-{uuid.uuid4().hex[:12]}"
@@ -121,7 +121,7 @@ class TestNoStartupCredentialReset:
                              json={"password": rotated}, timeout=30).status_code == 200
         assert login({"email": account["email"], "password": account["password"]}).status_code == 401
 
-        os.system("sudo supervisorctl restart backend >/dev/null 2>&1")
+        restart_isolated_test_server()
         for _ in range(60):
             if login(ADMIN).status_code in (200, 401, 403, 429):
                 break

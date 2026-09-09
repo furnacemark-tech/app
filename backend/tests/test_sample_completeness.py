@@ -11,6 +11,9 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+from conftest import run_db
+from database import db
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / "frontend" / ".env")
 load_dotenv(PROJECT_ROOT / "backend" / ".env")
@@ -24,15 +27,7 @@ UA = "pytest-sample-completeness"
 
 
 def _clear_lockouts():
-    import motor.motor_asyncio
-    import asyncio
-
-    async def _do():
-        cli = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGO_URL"])
-        await cli[os.environ["DB_NAME"]].login_attempts.delete_many({})
-        cli.close()
-
-    asyncio.run(_do())
+    run_db(lambda: db.login_attempts.delete_many({}))
 
 
 @pytest.fixture(autouse=True)
@@ -122,17 +117,12 @@ class TestIncompleteBlockedOnApprove:
         _enter(qc, s["id"],
                [{"parameter_id": f["p1"]["id"], "value_numeric": 5.0}])
 
-        # Force qa_status directly in Mongo to reproduce the legacy state
-        # without going through the (now-guarded) submit endpoint.
-        import motor.motor_asyncio, asyncio
-
-        async def force():
-            cli = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGO_URL"])
-            await cli[os.environ["DB_NAME"]].samples.update_one(
-                {"id": s["id"]}, {"$set": {"qa_status": "Pending Review"}})
-            cli.close()
-
-        asyncio.run(force())
+        run_db(
+            lambda: db.samples.update_one(
+                {"id": s["id"]},
+                {"$set": {"qa_status": "Pending Review"}},
+            )
+        )
         r = qa.post(f"{BASE}/samples/{s['id']}/decision/approve",
                     json={"comment": "ok"}, timeout=30)
         assert r.status_code == 422, r.text

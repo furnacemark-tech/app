@@ -17,7 +17,11 @@ import bcrypt
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-load_dotenv(Path(__file__).resolve().parent.parent / "backend" / ".env")
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / "backend" / ".env")
+sys.path.insert(0, str(ROOT / "backend"))
+
+from test_isolation import DatabaseSafetyError, validate_test_database_name
 
 TEST_ACCOUNTS = [
     ("admin@lims.local", "Admin@123", "System Administrator", "SA", "admin"),
@@ -30,8 +34,16 @@ async def main() -> int:
     if os.environ.get("LIMS_ENABLE_TEST_ACCOUNTS", "false").lower() != "true":
         print("Refusing to run: set LIMS_ENABLE_TEST_ACCOUNTS=true in a test environment only.")
         return 1
+    preview_db_name = os.environ.get("LIMS_PREVIEW_DB_NAME") or os.environ.get("DB_NAME")
+    test_db_name = os.environ.get("LIMS_TEST_DB_NAME", "")
+    try:
+        resolved_db_name = validate_test_database_name(test_db_name, preview_db_name)
+    except DatabaseSafetyError as error:
+        raise RuntimeError(
+            "seed_test_accounts.py is limited to a validated disposable test database."
+        ) from error
     client = AsyncIOMotorClient(os.environ["MONGO_URL"])
-    db = client[os.environ["DB_NAME"]]
+    db = client[resolved_db_name]
     created, skipped = [], []
     for email, password, name, initials, role in TEST_ACCOUNTS:
         if await db.users.find_one({"email": email}):

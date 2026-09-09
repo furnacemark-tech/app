@@ -18,6 +18,9 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+from conftest import run_db
+from database import db
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / "frontend" / ".env")
 load_dotenv(PROJECT_ROOT / "backend" / ".env")
@@ -31,15 +34,7 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) pytest-auth-unified"
 
 
 def _clear_lockouts():
-    import motor.motor_asyncio
-    import asyncio
-
-    async def _do():
-        cli = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGO_URL"])
-        await cli[os.environ["DB_NAME"]].login_attempts.delete_many({})
-        cli.close()
-
-    asyncio.run(_do())
+    run_db(lambda: db.login_attempts.delete_many({}))
 
 
 @pytest.fixture(autouse=True)
