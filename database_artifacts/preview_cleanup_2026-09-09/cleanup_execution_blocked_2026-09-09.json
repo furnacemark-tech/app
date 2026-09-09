@@ -1,0 +1,46 @@
+{
+  "backup": {
+    "exists": true,
+    "filename": "preview_database_backup_2026-09-09.archive.gz",
+    "sha256_matches": true
+  },
+  "blocking_discrepancy": {
+    "expected_protected_sample_point_name": "W1",
+    "reason": "Protected record lineage differs from the required pre-deletion protection rule.",
+    "resolved_protected_sample_point_name": "Final Effluent"
+  },
+  "collection_counts_unchanged": {
+    "audit_trail": 9128,
+    "auth_sessions": 2604,
+    "batches": 724,
+    "customers": 15,
+    "instruments": 74,
+    "login_attempts": 0,
+    "oos_log": 104,
+    "parameters": 226,
+    "products": 99,
+    "sample_points": 324,
+    "samples": 452,
+    "spec_versions": 138,
+    "specifications": 415,
+    "users": 308
+  },
+  "database_records_deleted": 0,
+  "manifest": {
+    "candidate_count": 9507,
+    "candidate_count_matches_expected": true,
+    "filename": "cleanup_candidates_dry_run_2026-09-09.json",
+    "sha256": "b966cfd81cc9d95183fdda4c488f05185a93b680adb2983bf668cb2fd506aa79"
+  },
+  "next_action": "Obtain owner direction for the protected record lineage. Do not delete any frozen candidate until resolved.",
+  "pre_deletion_checks_completed": {
+    "baseline_collection_counts_matched": true,
+    "every_frozen_candidate_existed_in_expected_collection": true,
+    "frozen_manifest_contains_no_ambiguous_deletion_candidates": true,
+    "protected_record_is_not_a_candidate": true,
+    "protected_record_present": true
+  },
+  "sensitive": true,
+  "status": "BLOCKED_PRE_DELETION",
+  "timestamp_utc": "2026-09-09T12:37:15.492065+00:00"
+}
