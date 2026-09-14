@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from math import ceil
 from typing import Any, Dict, List
@@ -342,9 +343,10 @@ def _category_match(category: str) -> Dict[str, Any]:
 def _search_match(search: str | None) -> Dict[str, Any] | None:
     if not search:
         return None
-    escaped = search.strip()
-    if not escaped:
+    term = search.strip()
+    if not term:
         return None
+    escaped = re.escape(term)
     return {
         "$or": [
             {"record_id": {"$regex": escaped, "$options": "i"}},
