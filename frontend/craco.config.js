@@ -148,4 +148,17 @@ const configureDevServer = webpackConfig.devServer;
 webpackConfig.devServer = (devServerConfig) =>
   makeDevServerV5Compatible(configureDevServer(devServerConfig));
 
+// Jest: resolve the "@/..." source alias (mirrors webpack.alias / jsconfig paths)
+// so component tests can import and mock modules by their alias.
+webpackConfig.jest = {
+  configure: (jestConfig) => {
+    jestConfig.moduleNameMapper = {
+      "^react-router-dom$": "<rootDir>/src/test/routerStub.jsx",
+      "^@/(.*)$": "<rootDir>/src/$1",
+      ...(jestConfig.moduleNameMapper || {}),
+    };
+    return jestConfig;
+  },
+};
+
 module.exports = webpackConfig;

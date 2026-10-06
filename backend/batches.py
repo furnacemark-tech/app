@@ -4,9 +4,9 @@ import io
 import csv
 import uuid
 from datetime import datetime, timezone, date, timedelta
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
@@ -1108,7 +1108,13 @@ async def coa_pdf(batch_id: str, coa_id: str, user: dict = CU()):
 
 
 @router.get("/qa/queues")
-async def qa_queues(user: dict = RR("admin", "qa")):
+async def qa_queues(
+    category: Literal["ready", "blocked", "oos", "instrument_issue", "approved", "returned"] = "ready",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    search: Optional[str] = Query(None, max_length=120),
+    user: dict = RR("admin", "qa"),
+):
     fields = {"_id": 0, "history": 0}
     awaiting = await db.batches.find({"status": "SUBMITTED"}, fields).sort("created_at", -1).to_list(300)
     on_hold = await db.batches.find({"status": {"$in": ["ON_HOLD", "RETURNED"]}}, fields).sort("created_at", -1).to_list(300)
@@ -1123,13 +1129,13 @@ async def qa_queues(user: dict = RR("admin", "qa")):
                                 "issue_date": c["issue_date"]})
     reissue = [{"batch_id": b["id"], "batch_number": b["batch_number"], "product_name": b["product_name"]}
                for b in released if b.get("coa_reissue_required")]
-    sample_queues = await build_sample_qa_queues()
+    sample_queues = await build_sample_qa_queues(category, page, page_size, search)
     return {
         "awaiting_review": awaiting,
         "on_hold": on_hold,
         "certificates_to_send": to_send,
         "reissue_required": reissue,
-        "samples_pending_review": sample_queues["sample_queue_counts"]["ready_for_review"],
+        "samples_pending_review": sample_queues["category_counts"]["ready"],
         **sample_queues,
     }
 

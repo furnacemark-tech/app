@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   SAMPLE_QUEUE_FILTERS,
+  isLatestQueueResponse,
+  paginationLabel,
+  queueRequestParams,
   sampleQueueCount,
-  sampleQueueRows,
   totalSampleAttentionRecords,
 } from "@/lib/qaQueue";
 
@@ -23,16 +25,47 @@ const Panel = ({ title, count, children, testId }) => (
 
 export default function QAQueues() {
   const [q, setQ] = useState(null);
-  const [sampleFilter, setSampleFilter] = useState("ready_for_review");
+  const [sampleFilter, setSampleFilter] = useState("ready");
+  const [samplePage, setSamplePage] = useState(1);
+  const [sampleSearch, setSampleSearch] = useState("");
+  const [sampleLoading, setSampleLoading] = useState(true);
+  const [sampleError, setSampleError] = useState("");
+  const latestRequestId = useRef(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/qa/queues").then(({ data }) => setQ(data));
-  }, []);
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
+    setSampleLoading(true);
+    setSampleError("");
+    api.get("/qa/queues", {
+      params: queueRequestParams(sampleFilter, samplePage, 25, sampleSearch),
+    })
+      .then(({ data }) => {
+        if (isLatestQueueResponse(requestId, latestRequestId.current)) {
+          setQ(data);
+        }
+      })
+      .catch(() => {
+        if (isLatestQueueResponse(requestId, latestRequestId.current)) {
+          setSampleError("Unable to load the QA attention queue. Please try again.");
+        }
+      })
+      .finally(() => {
+        if (isLatestQueueResponse(requestId, latestRequestId.current)) {
+          setSampleLoading(false);
+        }
+      });
+  }, [sampleFilter, samplePage, sampleSearch]);
 
-  if (!q) return <div className="text-sm text-slate-500">Loading queues…</div>;
+  if (!q && sampleLoading) {
+    return <div className="text-sm text-slate-500" data-testid="qa-queues-loading">Loading queues…</div>;
+  }
+  if (!q && sampleError) {
+    return <div className="text-sm text-red-700" data-testid="qa-queues-api-error">{sampleError}</div>;
+  }
 
-  const sampleRows = sampleQueueRows(q, sampleFilter);
+  const sampleRows = q?.items || [];
   const sampleAttentionCount = totalSampleAttentionRecords(q);
 
   const batchTable = (rows, prefix) => (
@@ -147,13 +180,66 @@ export default function QAQueues() {
               variant={sampleFilter === filter.key ? "default" : "outline"}
               size="sm"
               data-testid={`sample-qa-filter-${filter.key}`}
-              onClick={() => setSampleFilter(filter.key)}
+              onClick={() => {
+                setSampleFilter(filter.key);
+                setSamplePage(1);
+              }}
             >
               {filter.label} ({sampleQueueCount(q, filter.key)})
             </Button>
           ))}
         </div>
-        {sampleTable(sampleRows)}
+        <div className="flex flex-col gap-3 border-b border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="search"
+            value={sampleSearch}
+            placeholder="Search record ID or sample point"
+            data-testid="sample-qa-search-input"
+            className="h-9 w-full border border-slate-300 px-3 text-sm sm:max-w-sm"
+            onChange={(event) => {
+              setSampleSearch(event.target.value);
+              setSamplePage(1);
+            }}
+          />
+          <div className="text-sm text-slate-600" data-testid="sample-qa-total-items">
+            {q?.total_items || 0} record(s)
+          </div>
+        </div>
+        {sampleError && (
+          <div className="border-b border-red-200 bg-red-50 p-3 text-sm text-red-800" data-testid="sample-qa-api-error">
+            {sampleError}
+          </div>
+        )}
+        {sampleLoading ? (
+          <div className="p-4 text-sm text-slate-500" data-testid="sample-qa-loading-state">Loading records…</div>
+        ) : (
+          sampleTable(sampleRows)
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <div className="text-sm text-slate-600" data-testid="sample-qa-pagination-label">
+            {paginationLabel(q)}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!q?.has_previous}
+              data-testid="sample-qa-previous-button"
+              onClick={() => setSamplePage((current) => Math.max(1, current - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!q?.has_next}
+              data-testid="sample-qa-next-button"
+              onClick={() => setSamplePage((current) => current + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </Panel>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
