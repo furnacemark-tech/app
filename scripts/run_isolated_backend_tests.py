@@ -6,26 +6,36 @@ import sys
 import uuid
 from pathlib import Path
 
-from dotenv import load_dotenv
-from pymongo import MongoClient
-
-
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = ROOT / "backend"
-sys.path.insert(0, str(BACKEND_DIR))
 
-from test_isolation import (
-    IsolatedTestServer,
-    collection_counts,
-    database_exists,
-    drop_disposable_database,
-    make_disposable_database_name,
-    reserve_test_port,
-    validate_test_database_name,
-)
+
+def runner_exit_code(
+    pytest_exit_code: int,
+    preview_counts_unchanged: bool,
+    disposable_database_removed: bool,
+) -> int:
+    if pytest_exit_code != 0:
+        return pytest_exit_code
+    if not preview_counts_unchanged or not disposable_database_removed:
+        return 1
+    return 0
 
 
 def main() -> int:
+    from dotenv import load_dotenv
+    from pymongo import MongoClient
+
+    sys.path.insert(0, str(BACKEND_DIR))
+    from test_isolation import (
+        collection_counts,
+        database_exists,
+        drop_disposable_database,
+        make_disposable_database_name,
+        reserve_test_port,
+        validate_test_database_name,
+    )
+
     parser = argparse.ArgumentParser()
     parser.add_argument("pytest_args", nargs="*", default=["tests"])
     arguments = parser.parse_args()
@@ -80,11 +90,17 @@ def main() -> int:
                 client.close()
 
         preview_after = collection_counts(mongo_url, preview_db_name)
+        preview_unchanged = preview_before == preview_after
         print(f"PREVIEW_COUNTS_AFTER={preview_after}")
-        print(f"PREVIEW_COUNTS_UNCHANGED={preview_before == preview_after}")
-        print(f"DISPOSABLE_DATABASE_REMOVED={not database_exists(mongo_url, test_db_name)}")
+        print(f"PREVIEW_COUNTS_UNCHANGED={preview_unchanged}")
+        disposable_database_removed = not database_exists(mongo_url, test_db_name)
+        print(f"DISPOSABLE_DATABASE_REMOVED={disposable_database_removed}")
 
-    return result.returncode if result else 1
+    return runner_exit_code(
+        result.returncode if result else 1,
+        preview_unchanged,
+        disposable_database_removed,
+    )
 
 
 if __name__ == "__main__":
