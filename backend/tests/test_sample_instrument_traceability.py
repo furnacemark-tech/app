@@ -217,7 +217,6 @@ def test_historical_invalid_traceability_blocks_submit_approval_and_coa(master_d
             {
                 "$set": {
                     "results.0.instrument_id": "10",
-                    "qa_status": "Pending Review",
                 }
             },
         )
@@ -230,6 +229,12 @@ def test_historical_invalid_traceability_blocks_submit_approval_and_coa(master_d
         "not registered",
     )
 
+    run_db(
+        lambda: db.samples.update_one(
+            {"id": sample["id"]},
+            {"$set": {"qa_status": "Pending Review"}},
+        )
+    )
     instrument_issue(
         qa.post(
             f"{BASE}/samples/{sample['id']}/decision/approve",
