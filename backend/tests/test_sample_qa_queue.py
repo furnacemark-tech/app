@@ -8,7 +8,9 @@ page in `items`, plus `page`, `page_size`, `total_items`, `total_pages`,
 """
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 import requests
 import pytest
@@ -109,6 +111,12 @@ def ready_sample(admin, qc, point, ph, sample_date="2026-09-08"):
     return sample
 
 
+def complete_unsubmitted_sample(admin, qc, ph):
+    sample = sample_for(qc, point_with_specs(admin, [ph]))
+    save_ph(qc, sample["id"], ph)
+    return sample
+
+
 def parameters(admin):
     return {item["name"]: item for item in admin.get(f"{BASE}/parameters", timeout=30).json()}
 
@@ -132,6 +140,16 @@ def ids(payload):
 
 def find(payload, sample_id):
     return next((item for item in payload["items"] if item["id"] == sample_id), None)
+
+
+def submission_audits(client, sample_id):
+    response = client.get(
+        f"{BASE}/audit-trail",
+        params={"entity_id": sample_id, "action": "SUBMIT_FOR_REVIEW"},
+        timeout=30,
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -160,6 +178,52 @@ def test_complete_submitted_sample_is_ready_for_qa_review():
     assert row is not None
     assert row["attention_reasons"] == []
     assert sample["id"] not in ids(fetch(qa, "blocked", page_size=100))
+
+
+def test_submit_is_single_transition_with_one_audit_record():
+    admin, qc = session(ADMIN), session(QC)
+    ph = parameters(admin)["pH"]
+    sample = complete_unsubmitted_sample(admin, qc, ph)
+
+    first = qc.post(
+        f"{BASE}/samples/{sample['id']}/submit",
+        json={"comment": "ready"},
+        timeout=30,
+    )
+    assert first.status_code == 200, first.text
+    assert first.json()["qa_status"] == "Pending Review"
+
+    second = qc.post(
+        f"{BASE}/samples/{sample['id']}/submit",
+        json={"comment": "duplicate"},
+        timeout=30,
+    )
+    assert second.status_code == 409, second.text
+    assert "not eligible" in second.json()["detail"].lower()
+    assert len(submission_audits(qc, sample["id"])) == 1
+
+
+def test_competing_submissions_create_one_transition_and_audit_record():
+    admin, qc = session(ADMIN), session(QC)
+    qc_competitor = session(QC)
+    ph = parameters(admin)["pH"]
+    sample = complete_unsubmitted_sample(admin, qc, ph)
+    barrier = Barrier(2)
+
+    def submit_at_barrier(client):
+        barrier.wait(timeout=10)
+        return client.post(
+            f"{BASE}/samples/{sample['id']}/submit",
+            json={"comment": "competing submission"},
+            timeout=30,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(submit_at_barrier, client) for client in (qc, qc_competitor)]
+        responses = [future.result(timeout=40) for future in futures]
+
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    assert len(submission_audits(qc, sample["id"])) == 1
 
 
 def test_incomplete_visible_record_lists_each_outstanding_parameter():
@@ -196,11 +260,16 @@ def test_invalid_required_instrument_appears_in_instrument_issue_queue():
 def test_approved_sample_is_not_in_ready_for_review():
     admin, qa, qc = session(ADMIN), session(QA), session(QC)
     ph = parameters(admin)["pH"]
-    sample = ready_sample(admin, qc, point_with_specs(admin, [ph]), ph)
+    point = point_with_specs(admin, [ph])
+    sample = sample_for(qc, point)
+    save_ph(qc, sample["id"], ph, value=99.0)
+    submit(qc, sample["id"])
     assert qa.post(f"{BASE}/samples/{sample['id']}/decision/approve",
                    json={"comment": "approved"}).status_code == 200
     row = find(fetch(qa, "approved", page_size=100), sample["id"])
     assert row is not None and row["qa_status"] == "Approved"
+    assert "QA approved" in row["attention_reasons"]
+    assert "OOS result: pH" in row["attention_reasons"]
     assert sample["id"] not in ids(fetch(qa, "ready", page_size=100))
 
 
@@ -214,6 +283,14 @@ def test_rejected_sample_is_returned_rejected_and_oos():
     assert returned is not None
     assert "QA rejected / returned for investigation" in returned["attention_reasons"]
     assert sample["id"] in ids(fetch(qa, "oos", page_size=100))
+    resubmitted = qc.post(
+        f"{BASE}/samples/{sample['id']}/submit",
+        json={"comment": "corrected and resubmitted"},
+        timeout=30,
+    )
+    assert resubmitted.status_code == 200, resubmitted.text
+    assert resubmitted.json()["qa_status"] == "Pending Review"
+    assert len(submission_audits(qc, sample["id"])) == 2
 
 
 def test_record_with_incomplete_and_instrument_issues_has_both_reasons():
@@ -351,11 +428,20 @@ def test_displayed_reasons_agree_with_classification():
     save_ph(qc, bad["id"], ph)
     set_sample_fields(bad["id"], {"results.0.instrument_id": "10", "qa_status": "Pending Review"})
 
-    for row in fetch(qa, "ready", page_size=100)["items"]:
-        assert row["attention_reasons"] == []
+    ready_rows = fetch(qa, "ready", page_size=100)["items"]
+    oos_rows = fetch(qa, "oos", page_size=100)["items"]
+    oos_ids = {row["id"] for row in oos_rows}
+    for row in ready_rows:
+        reasons = row["attention_reasons"]
+        assert all(
+            reason.lower().startswith(("oos result:", "open oos investigation"))
+            for reason in reasons
+        )
+        if reasons:
+            assert row["id"] in oos_ids
     for row in fetch(qa, "blocked", page_size=100)["items"]:
         assert any("outstanding" in reason.lower() for reason in row["attention_reasons"])
-    for row in fetch(qa, "oos", page_size=100)["items"]:
+    for row in oos_rows:
         assert any(
             any(token in reason.lower() for token in ("oos", "investigation", "rejected"))
             for reason in row["attention_reasons"]

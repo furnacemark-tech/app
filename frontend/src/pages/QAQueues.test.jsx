@@ -68,6 +68,20 @@ describe("QAQueues component", () => {
     expect(screen.getByTestId("sample-qa-total-items")).toHaveTextContent("2 record(s)");
   });
 
+  it("shows the approval reason instead of the awaiting-decision fallback", async () => {
+    api.get.mockResolvedValue(
+      resp({
+        items: [row("REC-APPROVED", { qa_status: "Approved", attention_reasons: ["QA approved"] })],
+        total_items: 1,
+      }),
+    );
+    renderPage();
+
+    const reason = await screen.findByTestId("sample-qa-attention-REC-APPROVED");
+    expect(reason).toHaveTextContent("QA approved");
+    expect(reason).not.toHaveTextContent("Awaiting QA decision.");
+  });
+
   it("shows the empty state when the category has no records", async () => {
     api.get.mockResolvedValue(resp());
     renderPage();

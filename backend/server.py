@@ -611,6 +611,12 @@ async def submit_sample(sample_id: str, body: DecisionIn, user: dict = Depends(r
     sample = await db.samples.find_one({"id": sample_id}, {"_id": 0})
     if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
+    eligible_source_states = ("Not Submitted", "Requires Investigation")
+    if sample.get("qa_status") not in eligible_source_states:
+        raise HTTPException(
+            status_code=409,
+            detail="Sample is not eligible for submission: QA status must be Not Submitted or Requires Investigation.",
+        )
     if not sample.get("results"):
         raise HTTPException(status_code=400, detail="Enter at least one result before submitting for QA review")
     outstanding = await outstanding_required_parameters(sample)
@@ -625,11 +631,22 @@ async def submit_sample(sample_id: str, body: DecisionIn, user: dict = Depends(r
             "message": "Cannot submit: instrument traceability must be corrected",
             "instrument_issues": instrument_issues,
         })
-    await db.samples.update_one({"id": sample_id}, {"$set": {
-        "qa_status": "Pending Review", "submitted_by": user["email"],
-        "submitted_at": now_iso(), "submit_comment": body.comment}})
+    source_sample = await db.samples.find_one_and_update(
+        {"id": sample_id, "qa_status": {"$in": list(eligible_source_states)}},
+        {"$set": {
+            "qa_status": "Pending Review", "submitted_by": user["email"],
+            "submitted_at": now_iso(), "submit_comment": body.comment,
+        }},
+        projection={"_id": 0, "qa_status": 1},
+        return_document=False,
+    )
+    if source_sample is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Sample is no longer eligible for submission for QA review.",
+        )
     await audit(user, "SUBMIT_FOR_REVIEW", "sample", sample_id,
-                before={"qa_status": sample["qa_status"]}, after={"qa_status": "Pending Review"},
+                before={"qa_status": source_sample["qa_status"]}, after={"qa_status": "Pending Review"},
                 reason=body.comment)
     return await db.samples.find_one({"id": sample_id}, {"_id": 0})
 

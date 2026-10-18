@@ -22,6 +22,7 @@ export default function SampleDetail() {
   const [entries, setEntries] = useState({});
   const [audit, setAudit] = useState([]);
   const [qaComment, setQaComment] = useState("");
+  const [submittingForReview, setSubmittingForReview] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await api.get(`/samples/${id}`);
@@ -70,6 +71,9 @@ export default function SampleDetail() {
   const traceabilityBlocked = instrumentIssues.length > 0;
   const traceabilitySummary = traceabilityIssueSummary(instrumentIssues);
   const workflowBlocked = incomplete || traceabilityBlocked;
+  const canSubmitForReview =
+    can("admin", "qc") &&
+    ["Not Submitted", "Requires Investigation"].includes(sample.qa_status);
   const coa = coaEligibility(
     sample,
     incomplete,
@@ -103,13 +107,26 @@ export default function SampleDetail() {
   };
 
   const submitForReview = async () => {
+    if (submittingForReview) return;
+    setSubmittingForReview(true);
     try {
       await api.post(`/samples/${id}/submit`, { comment: qaComment });
       toast.success("Submitted for QA review");
       setQaComment("");
-      load();
+      setSample((current) => current && { ...current, qa_status: "Pending Review" });
+      await load().catch(() => {});
     } catch (err) {
-      toast.error(apiError(err.response?.data?.detail));
+      const message = apiError(err.response?.data?.detail);
+      toast.error(
+        err.response?.status === 409
+          ? message || "Sample state changed. Reload before submitting for QA review."
+          : message,
+      );
+      if (err.response?.status === 409) {
+        await load().catch(() => {});
+      }
+    } finally {
+      setSubmittingForReview(false);
     }
   };
 
@@ -359,11 +376,11 @@ export default function SampleDetail() {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            {can("admin", "qc") && sample.qa_status !== "Approved" && (
+            {canSubmitForReview && (
               <Button
                 variant="outline"
                 onClick={submitForReview}
-                disabled={workflowBlocked}
+                disabled={workflowBlocked || submittingForReview}
                 data-testid="submit-review-btn"
                 title={
                   incomplete
