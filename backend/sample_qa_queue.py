@@ -473,6 +473,8 @@ async def build_sample_qa_queues(
             attention_reasons.append("Open OOS investigation")
         if sample.get("qa_status") == "Requires Investigation":
             attention_reasons.append("QA rejected / returned for investigation")
+        if sample.get("qa_status") == "Approved":
+            attention_reasons.append("QA approved")
         items.append(_sample_row(enriched, attention_reasons))
 
     return {
